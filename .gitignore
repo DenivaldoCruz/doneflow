@@ -1,0 +1,10 @@
+.coverage
+.env
+build/
+src/doneflow.egg-info/
+src/doneflow/__pycache__/
+src/doneflow/api/__pycache__/
+src/doneflow/models/__pycache__/
+tests/__pycache__/
+tests/unit/.coverage
+tests/unit/__pycache__/
