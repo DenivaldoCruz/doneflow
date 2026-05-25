@@ -1,21 +1,21 @@
-"""Unit tests for API schemas (TDD RED phase)."""
+"""Unit tests for Pydantic task schemas."""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
 
-from doneflow.api.schemas import (
-    DistributionResponse,
-    QuadrantDistribution,
-    TaskCreate,
-    TaskResponse,
-    TaskUpdate,
-)
 from doneflow.models.quadrant import Quadrant
+from doneflow.schemas.task import DistributionResponse, TaskCreate, TaskResponse, TaskUpdate
 
+
+@pytest.mark.unit
+def test_task_create_trims_description_when_valid() -> None:
+    schema = TaskCreate(description="  Preparar demo para o cliente  ")
+    assert schema.description == "Preparar demo para o cliente"
 
 def test_task_create_accepts_valid_description() -> None:
     """TaskCreate should accept valid description between 5 and 500 characters."""
@@ -64,21 +64,48 @@ def test_task_update_allows_manual_quadrant_change() -> None:
 
     assert update.quadrant == Quadrant.DELEGATE
 
+@pytest.mark.unit
+def test_task_update_requires_at_least_one_field() -> None:
+    with pytest.raises(ValidationError):
+        TaskUpdate()
 
-def test_distribution_response_contains_count_and_percentage_by_quadrant() -> None:
-    """DistributionResponse should expose count and percentage per quadrant."""
-    distribution = DistributionResponse(
-        quadrants={
-            Quadrant.DO_NOW: QuadrantDistribution(count=4, percentage=40.0),
-            Quadrant.SCHEDULE: QuadrantDistribution(count=3, percentage=30.0),
-            Quadrant.DELEGATE: QuadrantDistribution(count=2, percentage=20.0),
-            Quadrant.ELIMINATE: QuadrantDistribution(count=1, percentage=10.0),
-        },
-        total_tasks=10,
+
+@pytest.mark.unit
+def test_task_update_accepts_quadrant_only() -> None:
+    schema = TaskUpdate(quadrant=Quadrant.SCHEDULE)
+    assert schema.quadrant == Quadrant.SCHEDULE
+
+
+@pytest.mark.unit
+def test_task_response_supports_from_attributes() -> None:
+    class Obj:
+        id = uuid4()
+        description = "Executar tarefa urgente"
+        quadrant = Quadrant.DO_NOW
+        ai_confidence = 0.9
+        ai_reasoning = "Urgente e importante"
+        created_at = datetime.now(UTC)
+        updated_at = datetime.now(UTC)
+
+    schema = TaskResponse.model_validate(Obj())
+    assert schema.description == "Executar tarefa urgente"
+
+
+@pytest.mark.unit
+def test_distribution_response_requires_total_consistency() -> None:
+    with pytest.raises(ValidationError):
+        DistributionResponse(DO_NOW=1, SCHEDULE=2, DELEGATE=3, ELIMINATE=4, total=9)
+
+
+@pytest.mark.unit
+def test_distribution_response_from_quadrant_counts_builds_total() -> None:
+    schema = DistributionResponse.from_quadrant_counts(
+        {
+            Quadrant.DO_NOW: 1,
+            "schedule": 2,
+            "DELEGATE": 3,
+            "eliminate": 4,
+        }
     )
+    assert schema.total == 10
 
-    assert distribution.total_tasks == 10
-    assert distribution.quadrants[Quadrant.DO_NOW].count == 4
-    assert distribution.quadrants[Quadrant.SCHEDULE].percentage == pytest.approx(30.0)
-    assert distribution.quadrants[Quadrant.DELEGATE].count == 2
-    assert distribution.quadrants[Quadrant.ELIMINATE].percentage == pytest.approx(10.0)

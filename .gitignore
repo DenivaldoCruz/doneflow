@@ -9,4 +9,4 @@ tests/__pycache__/
 tests/unit/.coverage
 tests/unit/__pycache__/
 .DS_Store
-tests/.DS_Store
+tests/.DS_Storesrc/doneflow/schemas/__pycache__/
