@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from doneflow.config import Settings
+from doneflow.config import Settings, get_settings
 
 
 def test_settings_loads_defaults_when_environment_is_empty() -> None:
@@ -49,3 +49,17 @@ def test_settings_rejects_negative_cache_ttl() -> None:
             DATABASE_URL="sqlite:///doneflow.db",
             AI_CACHE_TTL_SECONDS=-1,
         )
+
+
+def test_get_settings_reads_environment_and_caches_result(monkeypatch: pytest.MonkeyPatch) -> None:
+    """get_settings should load required values from env and reuse cached object."""
+    get_settings.cache_clear()
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "env-key")
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///env.db")
+
+    first = get_settings()
+    second = get_settings()
+
+    assert first is second
+    assert first.ANTHROPIC_API_KEY == "env-key"
+    assert first.DATABASE_URL == "sqlite:///env.db"
