@@ -1,0 +1,8 @@
+.coverage
+.env
+build/
+src/doneflow.egg-info/
+__pycache__/
+tests/__pycache__/
+tests/unit/.coverage
+.DS_Store
