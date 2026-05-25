@@ -10,7 +10,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 
 from sqlalchemy import create_engine
 
-from doneflow.database import Base, SessionLocal
+from doneflow.database import Base, session_local
 from doneflow.models.quadrant import Quadrant
 from doneflow.repositories.task_repository import TaskRepository
 
@@ -22,7 +22,7 @@ def test_create_persists_and_returns_task_with_generated_id() -> None:
     repository = TaskRepository()
 
     created = repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Finalizar proposta para cliente estratégico",
         quadrant=Quadrant.DO_NOW,
         created_at=datetime.now(UTC),
@@ -42,7 +42,7 @@ def test_get_by_id_returns_existing_task() -> None:
     repository = TaskRepository()
 
     created = repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Agendar reunião de alinhamento semanal",
         quadrant=Quadrant.SCHEDULE,
         created_at=datetime.now(UTC),
@@ -50,7 +50,7 @@ def test_get_by_id_returns_existing_task() -> None:
     )
 
     found = repository.get_by_id(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         task_id=created.id,
     )
 
@@ -66,7 +66,7 @@ def test_get_by_id_returns_none_for_nonexistent_id() -> None:
     repository = TaskRepository()
 
     found = repository.get_by_id(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         task_id="00000000-0000-0000-0000-000000000000",
     )
 
@@ -80,21 +80,21 @@ def test_get_all_returns_complete_list() -> None:
     repository = TaskRepository()
 
     repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Responder e-mails pendentes",
         quadrant=Quadrant.DELEGATE,
         created_at=datetime.now(UTC),
         ai_confidence=0.72,
     )
     repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Definir metas da próxima sprint",
         quadrant=Quadrant.SCHEDULE,
         created_at=datetime.now(UTC),
         ai_confidence=0.84,
     )
 
-    tasks = repository.get_all(session_factory=lambda: SessionLocal(bind=engine))
+    tasks = repository.get_all(session_factory=lambda: session_local(bind=engine))
 
     assert len(tasks) == 2
 
@@ -106,14 +106,14 @@ def test_get_by_quadrant_filters_tasks_correctly() -> None:
     repository = TaskRepository()
 
     repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Preparar relatório urgente de incidentes",
         quadrant=Quadrant.DO_NOW,
         created_at=datetime.now(UTC),
         ai_confidence=0.93,
     )
     repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Limpar caixa de entrada sem prioridade",
         quadrant=Quadrant.ELIMINATE,
         created_at=datetime.now(UTC),
@@ -121,7 +121,7 @@ def test_get_by_quadrant_filters_tasks_correctly() -> None:
     )
 
     do_now_tasks = repository.get_by_quadrant(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         quadrant=Quadrant.DO_NOW,
     )
 
@@ -136,7 +136,7 @@ def test_update_quadrant_updates_and_persists_change() -> None:
     repository = TaskRepository()
 
     created = repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Coletar materiais de apoio",
         quadrant=Quadrant.SCHEDULE,
         created_at=datetime.now(UTC),
@@ -144,12 +144,12 @@ def test_update_quadrant_updates_and_persists_change() -> None:
     )
 
     updated = repository.update_quadrant(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         task_id=created.id,
         quadrant=Quadrant.DELEGATE,
     )
     persisted = repository.get_by_id(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         task_id=created.id,
     )
 
@@ -166,7 +166,7 @@ def test_delete_removes_task_and_returns_true() -> None:
     repository = TaskRepository()
 
     created = repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Cancelar assinatura sem uso",
         quadrant=Quadrant.ELIMINATE,
         created_at=datetime.now(UTC),
@@ -174,11 +174,11 @@ def test_delete_removes_task_and_returns_true() -> None:
     )
 
     deleted = repository.delete(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         task_id=created.id,
     )
     found_after_delete = repository.get_by_id(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         task_id=created.id,
     )
 
@@ -193,7 +193,7 @@ def test_delete_returns_false_for_nonexistent_id() -> None:
     repository = TaskRepository()
 
     deleted = repository.delete(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         task_id="00000000-0000-0000-0000-000000000000",
     )
 
@@ -207,42 +207,42 @@ def test_get_distribution_returns_correct_count_per_quadrant() -> None:
     repository = TaskRepository()
 
     repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Resolver bug em produção com prazo hoje",
         quadrant=Quadrant.DO_NOW,
         created_at=datetime.now(UTC),
         ai_confidence=0.97,
     )
     repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Planejar treinamentos do próximo mês",
         quadrant=Quadrant.SCHEDULE,
         created_at=datetime.now(UTC),
         ai_confidence=0.83,
     )
     repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Delegar atualização de dashboard",
         quadrant=Quadrant.DELEGATE,
         created_at=datetime.now(UTC),
         ai_confidence=0.79,
     )
     repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Arquivar notificações irrelevantes",
         quadrant=Quadrant.ELIMINATE,
         created_at=datetime.now(UTC),
         ai_confidence=0.7,
     )
     repository.create(
-        session_factory=lambda: SessionLocal(bind=engine),
+        session_factory=lambda: session_local(bind=engine),
         description="Revisar contrato com deadline imediato",
         quadrant=Quadrant.DO_NOW,
         created_at=datetime.now(UTC),
         ai_confidence=0.92,
     )
 
-    distribution = repository.get_distribution(session_factory=lambda: SessionLocal(bind=engine))
+    distribution = repository.get_distribution(session_factory=lambda: session_local(bind=engine))
 
     assert distribution[Quadrant.DO_NOW] == 2
     assert distribution[Quadrant.SCHEDULE] == 1

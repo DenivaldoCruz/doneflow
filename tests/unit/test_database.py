@@ -11,12 +11,12 @@ from sqlalchemy import create_engine, inspect
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 
-from doneflow.database import Base, SessionLocal, TaskORM, get_db  # noqa: E402
+from doneflow.database import Base, TaskORM, get_db, session_local  # noqa: E402
 
 
-def test_sessionlocal_uses_context_manager_and_closes_session() -> None:
-    """SessionLocal context manager should yield a session and close it afterwards."""
-    with SessionLocal() as session:
+def test_session_local_uses_context_manager_and_closes_session() -> None:
+    """session_local context manager should yield a session and close it afterwards."""
+    with session_local() as session:
         assert session.is_active
 
     assert session.get_bind() is not None
@@ -61,7 +61,7 @@ def test_taskorm_persists_and_reads_all_fields() -> None:
     task_id = uuid.uuid4()
     created_at = datetime.now(UTC)
 
-    with SessionLocal(bind=engine) as session:
+    with session_local(bind=engine) as session:
         task = TaskORM(
             id=task_id,
             text="Finalizar planejamento trimestral",

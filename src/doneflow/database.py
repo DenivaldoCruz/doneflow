@@ -40,7 +40,7 @@ class TaskORM(Base):
 
 
 @contextmanager
-def SessionLocal(*, bind: object | None = None) -> Generator[Session, None, None]:
+def session_local(*, bind: object | None = None) -> Generator[Session, None, None]:
     """Yield a SQLAlchemy session and guarantee proper cleanup.
 
     Args:
@@ -58,5 +58,5 @@ def SessionLocal(*, bind: object | None = None) -> Generator[Session, None, None
 
 def get_db() -> Generator[Session, None, None]:
     """Provide a database session for FastAPI dependency injection."""
-    with SessionLocal() as session:
+    with session_local() as session:
         yield session

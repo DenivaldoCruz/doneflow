@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import Enum
 
 
-class Quadrant(str, Enum):
+class Quadrant(Enum):
     """Representa os quadrantes da Matriz de Eisenhower.
 
     Cada membro identifica a combinação entre urgência e importância
