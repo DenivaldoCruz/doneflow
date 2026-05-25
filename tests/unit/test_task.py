@@ -17,32 +17,32 @@ def test_task_creation_with_required_fields() -> None:
     now = datetime.now(timezone.utc)
     task = Task(
         id="8f26ed6e-4ac2-4c49-bf4f-d233fce9f5fb",
-        text="Preparar apresentação para o cliente",
+        description="Preparar apresentação para o cliente",
         quadrant=Quadrant.DO_NOW,
         created_at=now,
     )
 
     assert str(task.id) == "8f26ed6e-4ac2-4c49-bf4f-d233fce9f5fb"
-    assert task.text == "Preparar apresentação para o cliente"
+    assert task.description == "Preparar apresentação para o cliente"
     assert task.quadrant == Quadrant.DO_NOW
     assert task.created_at == now
 
 
-@pytest.mark.parametrize("invalid_text", ["", "a", "abcd", "   "])
-def test_task_rejects_empty_or_too_short_text(invalid_text: str) -> None:
-    """Task should reject empty text or text with less than 5 characters."""
+@pytest.mark.parametrize("invalid_description", ["", "a", "abcd", "   "])
+def test_task_rejects_empty_or_too_short_description(invalid_description: str) -> None:
+    """Task should reject empty description or description with less than 5 characters."""
     with pytest.raises(ValidationError):
         Task(
-            text=invalid_text,
+            description=invalid_description,
             quadrant=Quadrant.SCHEDULE,
         )
 
 
-def test_task_rejects_text_longer_than_500_characters() -> None:
-    """Task should reject text with more than 500 characters."""
+def test_task_rejects_description_longer_than_500_characters() -> None:
+    """Task should reject description with more than 500 characters."""
     with pytest.raises(ValidationError):
         Task(
-            text="x" * 501,
+            description="x" * 501,
             quadrant=Quadrant.DELEGATE,
         )
 
@@ -50,7 +50,7 @@ def test_task_rejects_text_longer_than_500_characters() -> None:
 def test_task_generates_uuid_automatically_when_id_is_not_provided() -> None:
     """Task should generate UUID automatically when id is omitted."""
     task = Task(
-        text="Agendar revisão semanal",
+        description="Agendar revisão semanal",
         quadrant=Quadrant.SCHEDULE,
     )
 
@@ -61,7 +61,7 @@ def test_task_generates_created_at_automatically_when_not_provided() -> None:
     """Task should generate created_at automatically when omitted."""
     before = datetime.now(timezone.utc)
     task = Task(
-        text="Delegar compilação de relatório",
+        description="Delegar compilação de relatório",
         quadrant=Quadrant.DELEGATE,
     )
     after = datetime.now(timezone.utc)
@@ -73,12 +73,12 @@ def test_task_generates_created_at_automatically_when_not_provided() -> None:
 def test_task_accepts_optional_ai_confidence_between_zero_and_one() -> None:
     """Task should accept optional ai_confidence within inclusive range [0.0, 1.0]."""
     low = Task(
-        text="Responder e-mails não críticos",
+        description="Responder e-mails não críticos",
         quadrant=Quadrant.ELIMINATE,
         ai_confidence=0.0,
     )
     high = Task(
-        text="Responder e-mails não críticos",
+        description="Responder e-mails não críticos",
         quadrant=Quadrant.ELIMINATE,
         ai_confidence=1.0,
     )
@@ -92,7 +92,7 @@ def test_task_rejects_ai_confidence_out_of_range(invalid_confidence: float) -> N
     """Task should reject ai_confidence values outside range [0.0, 1.0]."""
     with pytest.raises(ValidationError):
         Task(
-            text="Planejar sprint da próxima semana",
+            description="Planejar sprint da próxima semana",
             quadrant=Quadrant.DO_NOW,
             ai_confidence=invalid_confidence,
         )
@@ -102,7 +102,7 @@ def test_task_accepts_optional_ai_reasoning() -> None:
     """Task should accept optional ai_reasoning field."""
     reasoning = "Possui prazo hoje e alto impacto no resultado do trimestre."
     task = Task(
-        text="Finalizar proposta comercial",
+        description="Finalizar proposta comercial",
         quadrant=Quadrant.DO_NOW,
         ai_reasoning=reasoning,
     )

@@ -8,3 +8,5 @@ src/doneflow/models/__pycache__/
 tests/__pycache__/
 tests/unit/.coverage
 tests/unit/__pycache__/
+.DS_Store
+tests/.DS_Store
