@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import os
 from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 
+import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 
 from doneflow.database import Base, session_local
 from doneflow.models.quadrant import Quadrant
@@ -248,3 +251,77 @@ def test_get_distribution_returns_correct_count_per_quadrant() -> None:
     assert distribution[Quadrant.SCHEDULE] == 1
     assert distribution[Quadrant.DELEGATE] == 1
     assert distribution[Quadrant.ELIMINATE] == 1
+
+
+def test_create_rolls_back_and_reraises_on_sqlalchemy_error() -> None:
+    """create should rollback and re-raise when commit fails."""
+    repository = TaskRepository()
+    session = MagicMock()
+    session.commit.side_effect = SQLAlchemyError("commit failed")
+
+    class _SessionContext:
+        def __enter__(self) -> MagicMock:
+            return session
+
+        def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+            return None
+
+    with pytest.raises(SQLAlchemyError):
+        repository.create(
+            session_factory=lambda: _SessionContext(),
+            description="Tarefa com falha no commit",
+            quadrant=Quadrant.DO_NOW,
+            created_at=datetime.now(UTC),
+            ai_confidence=0.99,
+        )
+
+    session.rollback.assert_called_once()
+
+
+def test_update_quadrant_rolls_back_and_reraises_on_sqlalchemy_error() -> None:
+    """update_quadrant should rollback and re-raise when commit fails."""
+    repository = TaskRepository()
+    session = MagicMock()
+    fake_task = MagicMock()
+    session.execute.return_value.scalar_one_or_none.return_value = fake_task
+    session.commit.side_effect = SQLAlchemyError("commit failed")
+
+    class _SessionContext:
+        def __enter__(self) -> MagicMock:
+            return session
+
+        def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+            return None
+
+    with pytest.raises(SQLAlchemyError):
+        repository.update_quadrant(
+            session_factory=lambda: _SessionContext(),
+            task_id="00000000-0000-0000-0000-000000000001",
+            quadrant=Quadrant.SCHEDULE,
+        )
+
+    session.rollback.assert_called_once()
+
+
+def test_delete_rolls_back_and_reraises_on_sqlalchemy_error() -> None:
+    """delete should rollback and re-raise when delete operation fails."""
+    repository = TaskRepository()
+    session = MagicMock()
+    fake_task = MagicMock()
+    session.execute.return_value.scalar_one_or_none.return_value = fake_task
+    session.commit.side_effect = SQLAlchemyError("commit failed")
+
+    class _SessionContext:
+        def __enter__(self) -> MagicMock:
+            return session
+
+        def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+            return None
+
+    with pytest.raises(SQLAlchemyError):
+        repository.delete(
+            session_factory=lambda: _SessionContext(),
+            task_id="00000000-0000-0000-0000-000000000002",
+        )
+
+    session.rollback.assert_called_once()
