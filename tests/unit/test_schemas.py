@@ -110,3 +110,71 @@ def test_distribution_response_from_quadrant_counts_builds_total() -> None:
         }
     )
     assert schema.total == 10
+
+
+def test_task_update_trims_description_when_provided() -> None:
+    """TaskUpdate should trim whitespace from description."""
+    update = TaskUpdate(description="  Updated task  ")
+    assert update.description == "Updated task"
+
+
+def test_task_update_rejects_empty_trimmed_description() -> None:
+    """TaskUpdate should reject description that becomes empty after trim."""
+    with pytest.raises(ValidationError):
+        TaskUpdate(description="    ")
+
+
+def test_task_update_rejects_too_short_description() -> None:
+    """TaskUpdate should reject description shorter than 5 chars."""
+    with pytest.raises(ValidationError):
+        TaskUpdate(description="1234")  # 4 chars, below minimum of 5
+
+
+def test_task_update_rejects_too_long_description() -> None:
+    """TaskUpdate should reject description longer than 500 chars."""
+    with pytest.raises(ValidationError):
+        TaskUpdate(description="x" * 501)
+
+
+def test_task_update_allows_description_with_quadrant() -> None:
+    """TaskUpdate should allow providing both description and quadrant."""
+    update = TaskUpdate(
+        description="New description for task",
+        quadrant=Quadrant.DO_NOW,
+    )
+    assert update.description == "New description for task"
+    assert update.quadrant == Quadrant.DO_NOW
+
+
+def test_distribution_response_handles_all_valid_quadrant_keys() -> None:
+    """DistributionResponse.from_quadrant_counts should handle various key formats."""
+    schema = DistributionResponse.from_quadrant_counts(
+        {
+            "DO_NOW": 1,
+            "SCHEDULE": 2,
+            Quadrant.DELEGATE: 3,
+            "eliminate": 4,
+        }
+    )
+    assert schema.DO_NOW == 1
+    assert schema.SCHEDULE == 2
+    assert schema.DELEGATE == 3
+    assert schema.ELIMINATE == 4
+    assert schema.total == 10
+
+
+def test_distribution_response_ignores_unknown_keys() -> None:
+    """DistributionResponse.from_quadrant_counts should ignore unknown quadrant keys."""
+    schema = DistributionResponse.from_quadrant_counts(
+        {
+            "DO_NOW": 1,
+            "UNKNOWN_KEY": 999,  # Should be ignored
+        }
+    )
+    assert schema.DO_NOW == 1
+    assert schema.SCHEDULE == 0
+    assert schema.DELEGATE == 0
+    assert schema.ELIMINATE == 0
+    assert schema.total == 1
+
+
