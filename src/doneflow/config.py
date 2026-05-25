@@ -34,4 +34,5 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Return cached settings instance for dependency injection."""
-    return Settings()
+    # BaseSettings resolves required fields from environment/.env at runtime.
+    return Settings()  # type: ignore[call-arg]
