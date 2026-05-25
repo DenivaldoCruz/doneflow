@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from doneflow.models.quadrant import Quadrant
@@ -29,9 +28,9 @@ class Task(BaseModel):
     description: str
     quadrant: Quadrant = Field(default=Quadrant.DO_NOW)
     ai_confidence: float = Field(default=1.0, ge=0.0, le=1.0)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    ai_reasoning: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    ai_reasoning: str | None = None
 
     @field_validator("description")
     @classmethod
@@ -79,4 +78,4 @@ class Task(BaseModel):
         """
         if value.tzinfo is None:
             raise ValueError("datetime values must include timezone information")
-        return value.astimezone(timezone.utc)
+        return value.astimezone(UTC)

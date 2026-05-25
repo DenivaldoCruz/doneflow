@@ -68,7 +68,7 @@ class TaskUpdate(BaseModel):
         return normalized
 
     @model_validator(mode="after")
-    def validate_non_empty_update(self) -> "TaskUpdate":
+    def validate_non_empty_update(self) -> TaskUpdate:
         """Ensure update payload has at least one field to update."""
         if self.description is None and self.quadrant is None:
             raise ValueError("at least one field must be provided")
@@ -129,7 +129,7 @@ class DistributionResponse(BaseModel):
     total: int = Field(ge=0)
 
     @model_validator(mode="after")
-    def validate_total(self) -> "DistributionResponse":
+    def validate_total(self) -> DistributionResponse:
         """Ensure total equals the sum of quadrant counters."""
         computed_total = self.DO_NOW + self.SCHEDULE + self.DELEGATE + self.ELIMINATE
         if self.total != computed_total:
@@ -137,7 +137,7 @@ class DistributionResponse(BaseModel):
         return self
 
     @classmethod
-    def from_quadrant_counts(cls, counts: dict[Quadrant | str, int]) -> "DistributionResponse":
+    def from_quadrant_counts(cls, counts: dict[Quadrant | str, int]) -> DistributionResponse:
         """Build distribution schema from a generic count mapping."""
         normalized: dict[str, int] = {quadrant.value: 0 for quadrant in Quadrant}
 

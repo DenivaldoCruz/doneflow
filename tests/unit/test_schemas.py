@@ -17,6 +17,7 @@ def test_task_create_trims_description_when_valid() -> None:
     schema = TaskCreate(description="  Preparar demo para o cliente  ")
     assert schema.description == "Preparar demo para o cliente"
 
+
 def test_task_create_accepts_valid_description() -> None:
     """TaskCreate should accept valid description between 5 and 500 characters."""
     schema = TaskCreate(description="Preparar relatório mensal para diretoria")
@@ -64,6 +65,7 @@ def test_task_update_allows_manual_quadrant_change() -> None:
 
     assert update.quadrant == Quadrant.DELEGATE
 
+
 @pytest.mark.unit
 def test_task_update_requires_at_least_one_field() -> None:
     with pytest.raises(ValidationError):
@@ -108,4 +110,3 @@ def test_distribution_response_from_quadrant_counts_builds_total() -> None:
         }
     )
     assert schema.total == 10
-

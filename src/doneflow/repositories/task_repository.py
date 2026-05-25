@@ -46,7 +46,9 @@ class TaskRepository:
                 session.rollback()
                 raise
 
-    def get_by_id(self, *, session_factory: Callable[[], Session], task_id: UUID | str) -> Task | None:
+    def get_by_id(
+        self, *, session_factory: Callable[[], Session], task_id: UUID | str
+    ) -> Task | None:
         """Fetch a task by its identifier."""
         with session_factory() as session:
             return self._fetch_task_by_id(session=session, task_id=task_id)

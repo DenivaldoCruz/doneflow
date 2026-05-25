@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import create_engine, inspect
 
@@ -59,7 +59,7 @@ def test_taskorm_persists_and_reads_all_fields() -> None:
     Base.metadata.create_all(bind=engine, tables=[TaskORM.__table__])
 
     task_id = uuid.uuid4()
-    created_at = datetime.now(timezone.utc)
+    created_at = datetime.now(UTC)
 
     with SessionLocal(bind=engine) as session:
         task = TaskORM(

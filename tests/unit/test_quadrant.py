@@ -7,7 +7,6 @@ from importlib import import_module
 
 import pytest
 
-
 EXPECTED_MEMBERS = ("DO_NOW", "SCHEDULE", "DELEGATE", "ELIMINATE")
 EXPECTED_PT_BR_LABELS = {
     "DO_NOW": "Fazer Agora",

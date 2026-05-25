@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
@@ -14,7 +14,7 @@ from doneflow.models.task import Task
 
 def test_task_creation_with_required_fields() -> None:
     """Task should be created with explicit required fields."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     task = Task(
         id="8f26ed6e-4ac2-4c49-bf4f-d233fce9f5fb",
         description="Preparar apresentação para o cliente",
@@ -59,12 +59,12 @@ def test_task_generates_uuid_automatically_when_id_is_not_provided() -> None:
 
 def test_task_generates_created_at_automatically_when_not_provided() -> None:
     """Task should generate created_at automatically when omitted."""
-    before = datetime.now(timezone.utc)
+    before = datetime.now(UTC)
     task = Task(
         description="Delegar compilação de relatório",
         quadrant=Quadrant.DELEGATE,
     )
-    after = datetime.now(timezone.utc)
+    after = datetime.now(UTC)
 
     assert isinstance(task.created_at, datetime)
     assert before <= task.created_at <= after
