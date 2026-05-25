@@ -7,7 +7,6 @@ from importlib import import_module
 
 import pytest
 
-
 EXPECTED_MEMBERS = ("DO_NOW", "SCHEDULE", "DELEGATE", "ELIMINATE")
 EXPECTED_PT_BR_LABELS = {
     "DO_NOW": "Fazer Agora",
@@ -98,3 +97,53 @@ def test_quadrant_enum_exposes_expected_hex_color_rf04(
     """Quadrant enum should expose PRD RF-04 color mapping."""
     member = quadrant_enum[member_name]
     assert getattr(member, "hex_color", None) == expected_color
+
+
+EXPECTED_DESCRIPTIONS = {
+    "DO_NOW": "Urgente e importante.",
+    "SCHEDULE": "Não urgente e importante.",
+    "DELEGATE": "Urgente e não importante.",
+    "ELIMINATE": "Não urgente e não importante.",
+}
+
+
+@pytest.mark.parametrize("member_name, expected_desc", EXPECTED_DESCRIPTIONS.items())
+def test_quadrant_enum_exposes_description(
+    quadrant_enum: type[Enum],
+    member_name: str,
+    expected_desc: str,
+) -> None:
+    """Quadrant enum should expose semantic descriptions for each quadrant."""
+    member = quadrant_enum[member_name]
+    assert getattr(member, "description", None) == expected_desc
+
+
+def test_quadrant_from_string_case_insensitive(quadrant_enum: type[Enum]) -> None:
+    """Quadrant.from_string should convert case-insensitive strings."""
+    result = quadrant_enum.from_string("do_now")
+    assert result == quadrant_enum.DO_NOW
+
+    result = quadrant_enum.from_string("  SCHEDULE  ")
+    assert result == quadrant_enum.SCHEDULE
+
+
+def test_quadrant_from_string_rejects_non_string_type(quadrant_enum: type[Enum]) -> None:
+    """Quadrant.from_string should raise TypeError for non-string input."""
+    with pytest.raises(TypeError, match="value must be a string"):
+        quadrant_enum.from_string(123)  # type: ignore
+
+
+def test_quadrant_from_string_rejects_invalid_value(quadrant_enum: type[Enum]) -> None:
+    """Quadrant.from_string should raise ValueError for invalid quadrant names."""
+    with pytest.raises(ValueError, match="Invalid quadrant value"):
+        quadrant_enum.from_string("INVALID_QUADRANT")
+
+
+def test_quadrant_str_representation(quadrant_enum: type[Enum]) -> None:
+    """Quadrant __str__ should return canonical value representation."""
+    member = quadrant_enum.DO_NOW
+    assert str(member) == "DO_NOW"
+
+    member = quadrant_enum.SCHEDULE
+    assert str(member) == "SCHEDULE"
+
