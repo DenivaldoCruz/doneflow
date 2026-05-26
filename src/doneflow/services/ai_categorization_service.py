@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from typing import Any
 
 from anthropic import AsyncAnthropic
-
-import os
 
 from doneflow.config import get_settings
 from doneflow.models.quadrant import Quadrant
@@ -58,8 +57,12 @@ class AICategorizationService:
                 "quadrant": parsed["quadrant"],
                 "confidence": parsed["confidence"],
             }
+        except TimeoutError:
+            raise
         except Exception as exc:  # noqa: BLE001
-            LOGGER.error("AI categorization failed, applying fallback classification: %s", type(exc).__name__)
+            LOGGER.error(
+                "AI categorization failed, applying fallback classification: %s", type(exc).__name__
+            )
             return self._fallback_classification(task_description)
 
     async def _call_anthropic_api(self, task_description: str) -> str:

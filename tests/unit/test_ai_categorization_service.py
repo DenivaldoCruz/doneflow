@@ -75,13 +75,13 @@ async def test_low_priority_task_classified_as_eliminate(ai_service_class: type)
 
 @pytest.mark.asyncio
 async def test_ai_service_fallback_on_timeout(ai_service_class: type) -> None:
-    """Timeouts from AI provider should trigger deterministic fallback categorization."""
+    """Timeouts from AI provider should raise TimeoutError."""
+
     service = ai_service_class()
     service._call_anthropic_api = AsyncMock(side_effect=TimeoutError("anthropic timeout"))
 
-    result = await service.classify_task("Fazer backup de fotos pessoais sem prazo")
-
-    assert result["quadrant"] == Quadrant.ELIMINATE
+    with pytest.raises(TimeoutError, match="anthropic timeout"):
+        await service.classify_task("Fazer backup de fotos pessoais sem prazo")
 
 
 @pytest.mark.asyncio
