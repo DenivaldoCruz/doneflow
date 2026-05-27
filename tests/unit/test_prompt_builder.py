@@ -6,7 +6,6 @@ from importlib import import_module
 
 import pytest
 
-
 KEYWORDS_URGENCIA = ("hoje", "urgente", "deadline", "prazo", "cliente", "entrega")
 QUADRANTES_COM_DESCRICAO = {
     "DO_NOW": "urgente e importante",
