@@ -38,6 +38,7 @@ dev = [
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
+pythonpath = ["src"]
 python_files = ["test_*.py", "*_test.py"]
 addopts = "-v --cov=src/doneflow --cov-report=term-missing --cov-report=html --cov-fail-under=90 --strict-markers"
 markers = [

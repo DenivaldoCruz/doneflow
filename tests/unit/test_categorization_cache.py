@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from importlib import import_module
 from typing import Any
@@ -117,3 +118,45 @@ def test_cache_hit_and_miss_statistics_are_available(
     assert cache.get(task_text) == categorized_result
 
     assert cache.stats() == {"hits": 1, "misses": 1, "size": 1}
+
+
+def test_cache_clear_removes_entries_and_resets_statistics(
+    categorization_cache_class: type,
+    categorized_result: dict[str, Any],
+) -> None:
+    """clear should remove cached entries and reset observability counters."""
+    cache = categorization_cache_class(ttl_seconds=300, max_entries=1000)
+    cache.set("Tarefa importante", categorized_result)
+    assert cache.get("Tarefa importante") == categorized_result
+    assert cache.get("Tarefa ausente") is None
+
+    cache.clear()
+
+    assert cache.keys() == []
+    assert cache.stats() == {"hits": 0, "misses": 0, "size": 0}
+
+
+def test_cache_rejects_non_positive_ttl(categorization_cache_class: type) -> None:
+    """Cache TTL must be positive to avoid immediately stale entries."""
+    with pytest.raises(ValueError, match="ttl_seconds must be positive"):
+        categorization_cache_class(ttl_seconds=0, max_entries=1000)
+
+
+def test_cache_rejects_non_positive_max_entries(categorization_cache_class: type) -> None:
+    """Cache size must be positive so LRU eviction has a valid bound."""
+    with pytest.raises(ValueError, match="max_entries must be positive"):
+        categorization_cache_class(ttl_seconds=300, max_entries=0)
+
+
+def test_cache_async_get_and_set_use_same_storage(
+    categorization_cache_class: type,
+    categorized_result: dict[str, Any],
+) -> None:
+    """Async cache helpers should store and retrieve values from the sync cache."""
+    cache = categorization_cache_class(ttl_seconds=300, max_entries=1000)
+
+    async def exercise_cache() -> dict[str, Any] | None:
+        await cache.async_set("Enviar proposta urgente", categorized_result)
+        return await cache.async_get("Enviar proposta urgente")
+
+    assert asyncio.run(exercise_cache()) == categorized_result

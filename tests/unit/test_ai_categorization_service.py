@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 from importlib import import_module
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -131,3 +132,97 @@ async def test_confidence_is_float_between_zero_and_one(ai_service_class: type) 
 
     assert isinstance(result["confidence"], float)
     assert 0.0 <= result["confidence"] <= 1.0
+
+
+def test_parse_response_rejects_non_object_payload(ai_service_class: type) -> None:
+    """JSON arrays should be rejected and handled by classify_task fallback."""
+    service = ai_service_class()
+
+    with pytest.raises(ValueError, match="Response must be an object"):
+        service._parse_response('["DO_NOW"]')
+
+
+def test_parse_response_rejects_out_of_range_confidence(ai_service_class: type) -> None:
+    """Confidence values outside the normalized range should be rejected."""
+    service = ai_service_class()
+
+    with pytest.raises(ValueError, match="Confidence out of range"):
+        service._parse_response('{"quadrant":"DO_NOW","confidence":1.5}')
+
+
+def test_parse_response_rejects_unknown_quadrant(ai_service_class: type) -> None:
+    """Unknown quadrant values should be rejected before persistence."""
+    service = ai_service_class()
+
+    with pytest.raises(ValueError, match="Invalid quadrant value"):
+        service._parse_response('{"quadrant":"PARK","confidence":0.5}')
+
+
+def test_fallback_classifies_urgent_unimportant_tasks_as_delegate(ai_service_class: type) -> None:
+    """Urgent but not strategic fallback tasks should map to DELEGATE."""
+    service = ai_service_class()
+
+    result = service._fallback_classification("Responder email urgente agora")
+
+    assert result == {"quadrant": Quadrant.DELEGATE, "confidence": 0.5}
+
+
+def test_fallback_classifies_important_nonurgent_tasks_as_schedule(ai_service_class: type) -> None:
+    """Strategic fallback tasks without urgency should map to SCHEDULE."""
+    service = ai_service_class()
+
+    result = service._fallback_classification("Definir estratégia de produto")
+
+    assert result == {"quadrant": Quadrant.SCHEDULE, "confidence": 0.5}
+
+
+def test_fallback_classifies_urgent_important_tasks_as_do_now(ai_service_class: type) -> None:
+    """Fallback should preserve both urgency and importance when both are present."""
+    service = ai_service_class()
+
+    result = service._fallback_classification("Reunião urgente com CEO hoje")
+
+    assert result == {"quadrant": Quadrant.DO_NOW, "confidence": 0.5}
+
+
+def test_call_anthropic_api_sends_structured_prompt_and_returns_text(
+    ai_service_class: type,
+) -> None:
+    """Anthropic calls should include model settings, timeout, and structured prompt text."""
+
+    class FakeContent:
+        text = '{"quadrant":"SCHEDULE","confidence":0.8}'
+
+    class FakeMessage:
+        content = [FakeContent()]
+
+    service = ai_service_class()
+    service._client = MagicMock()
+    service._client.messages.create = AsyncMock(return_value=FakeMessage())
+
+    result = asyncio.run(service._call_anthropic_api("Planejar roadmap de produto"))
+
+    assert result == '{"quadrant":"SCHEDULE","confidence":0.8}'
+    service._client.messages.create.assert_awaited_once()
+    call_kwargs = service._client.messages.create.await_args.kwargs
+    assert call_kwargs["model"] == "claude-sonnet-4-20250514"
+    assert call_kwargs["timeout"] == service._timeout_seconds
+    assert call_kwargs["messages"][0]["role"] == "user"
+    assert "Planejar roadmap de produto" in call_kwargs["messages"][0]["content"]
+
+
+def test_call_anthropic_api_rejects_empty_text(ai_service_class: type) -> None:
+    """Empty Anthropic content should be treated as an invalid provider response."""
+
+    class FakeContent:
+        text = "   "
+
+    class FakeMessage:
+        content = [FakeContent()]
+
+    service = ai_service_class()
+    service._client = MagicMock()
+    service._client.messages.create = AsyncMock(return_value=FakeMessage())
+
+    with pytest.raises(ValueError, match="Empty model response"):
+        asyncio.run(service._call_anthropic_api("Comprar café"))
