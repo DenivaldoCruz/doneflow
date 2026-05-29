@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "doneflow"
-version = "0.2.0"
 dynamic = ["version"]
 description = "Task Categorization with AI and Eisenhower Matrix"
 readme = "README.md"
