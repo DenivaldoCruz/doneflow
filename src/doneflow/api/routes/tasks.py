@@ -15,7 +15,7 @@ from doneflow.models.task import Task
 from doneflow.schemas.task import DistributionResponse, TaskCreate, TaskResponse, TaskUpdate
 from doneflow.services.task_service import TaskNotFoundError, TaskService
 
-router = APIRouter(prefix="/api/v1", tags=["tasks"])
+router = APIRouter(tags=["tasks"])
 
 
 @contextmanager
@@ -136,9 +136,3 @@ async def delete_task(
     except TaskNotFoundError as exc:
         raise _not_found_error(exc) from exc
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@router.get("/health", tags=["health"])
-async def health_check() -> dict[str, str]:
-    """Report API health for uptime probes and load balancers."""
-    return {"status": "ok"}
