@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
@@ -17,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -36,6 +41,23 @@ jobs:
 
       - name: Run tests with coverage
         run: pytest --cov=src/doneflow --cov-report=term-missing --cov-report=html --cov-fail-under=90
+
+      - name: Generate release tag name
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: release_tag
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TAG_NAME="release-$(date -u +'%Y%m%d%H%M%S')-${SHORT_SHA}"
+          echo "tag_name=${TAG_NAME}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create release tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          TAG_NAME="${{ steps.release_tag.outputs.tag_name }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}"
+          git push origin "${TAG_NAME}"
 
       - name: Upload coverage HTML report
         if: always()
