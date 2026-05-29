@@ -176,5 +176,3 @@ def test_distribution_response_ignores_unknown_keys() -> None:
     assert schema.DELEGATE == 0
     assert schema.ELIMINATE == 0
     assert schema.total == 1
-
-

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "doneflow"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Task Categorization with AI and Eisenhower Matrix"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -38,6 +38,7 @@ dev = [
 [tool.pytest.ini_options]
 minversion = "7.0"
 testpaths = ["tests"]
+pythonpath = ["src"]
 python_files = ["test_*.py", "*_test.py"]
 addopts = "-v --cov=src/doneflow --cov-report=term-missing --cov-report=html --cov-fail-under=90 --strict-markers"
 markers = [
@@ -92,3 +93,20 @@ disallow_untyped_defs = true
 strict_optional = true
 warn_redundant_casts = true
 warn_unused_ignores = true
+
+[tool.bumpver]
+current_version = "0.2.0"
+version_pattern = "MAJOR.MINOR.PATCH"
+# below fields are optional, default value is false
+commit_message = "update version: v{old_version} -> v{new_version}"
+commit = false  # creates a new commit for the version update with the
+               # above defined message
+push = false  # pushes the commit automatically to github
+
+[tool.setuptools.dynamic]
+version = {attr = "doneflow.__version__"}
+
+[tool.bumpver.file_patterns]
+"src/doneflow/__init__.py" = [
+    '^__version__ = "{version}"$',
+]
