@@ -139,6 +139,7 @@ class TaskRepository:
             description=orm_task.text,
             quadrant=Quadrant.from_string(orm_task.quadrant),
             created_at=self._ensure_utc(orm_task.created_at),
+            updated_at=self._ensure_utc(orm_task.created_at),
             ai_confidence=orm_task.ai_confidence,
             ai_reasoning=orm_task.ai_reasoning,
         )
