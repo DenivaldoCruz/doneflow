@@ -194,3 +194,115 @@ def test_task_response_body_has_all_task_response_schema_fields(client: TestClie
 
     assert response.status_code == 201
     assert set(response.json()) == TASK_RESPONSE_FIELDS
+
+
+def _create_task(client: TestClient, description: str) -> dict[str, Any]:
+    """Create a task through the API and return its response body."""
+    response = client.post(f"{API_PREFIX}/tasks", json={"description": description})
+
+    assert response.status_code == 201
+    return response.json()
+
+
+def test_delete_task_removes_from_board(client: TestClient) -> None:
+    """DELETE /tasks/{id} removes the task so it no longer appears on the board."""
+    created_task = _create_task(client, "Preparar reunião urgente com CEO hoje")
+
+    delete_response = client.delete(f"{API_PREFIX}/tasks/{created_task['id']}")
+
+    assert delete_response.status_code == 204
+    board_response = client.get(f"{API_PREFIX}/tasks")
+    assert board_response.status_code == 200
+    assert board_response.json() == []
+
+
+def test_patch_task_changes_quadrant(client: TestClient) -> None:
+    """PATCH /tasks/{id} manually changes the task quadrant."""
+    created_task = _create_task(client, "Preparar reunião urgente com CEO hoje")
+
+    response = client.patch(
+        f"{API_PREFIX}/tasks/{created_task['id']}",
+        json={"quadrant": Quadrant.SCHEDULE.value},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["id"] == created_task["id"]
+    assert body["description"] == created_task["description"]
+    assert body["quadrant"] == Quadrant.SCHEDULE.value
+
+
+def test_patch_task_with_invalid_quadrant_returns_422(client: TestClient) -> None:
+    """PATCH /tasks/{id} rejects unsupported quadrant values with HTTP 422."""
+    created_task = _create_task(client, "Preparar reunião urgente com CEO hoje")
+
+    response = client.patch(
+        f"{API_PREFIX}/tasks/{created_task['id']}",
+        json={"quadrant": "INVALID_QUADRANT"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_delete_nonexistent_task_returns_404(client: TestClient) -> None:
+    """DELETE /tasks/{id} returns HTTP 404 when the task does not exist."""
+    missing_task_id = "00000000-0000-4000-8000-000000000001"
+
+    response = client.delete(f"{API_PREFIX}/tasks/{missing_task_id}")
+
+    assert response.status_code == 404
+
+
+def test_patch_nonexistent_task_returns_404(client: TestClient) -> None:
+    """PATCH /tasks/{id} returns HTTP 404 when the task does not exist."""
+    missing_task_id = "00000000-0000-4000-8000-000000000002"
+
+    response = client.patch(
+        f"{API_PREFIX}/tasks/{missing_task_id}",
+        json={"quadrant": Quadrant.DELEGATE.value},
+    )
+
+    assert response.status_code == 404
+
+
+def test_get_task_by_id_returns_200_with_task(client: TestClient) -> None:
+    """GET /tasks/{id} returns HTTP 200 with the requested task body."""
+    created_task = _create_task(client, "Responder cliente sobre entrega")
+
+    response = client.get(f"{API_PREFIX}/tasks/{created_task['id']}")
+
+    assert response.status_code == 200
+    assert response.json() == created_task
+
+
+def test_get_task_by_id_nonexistent_returns_404(client: TestClient) -> None:
+    """GET /tasks/{id} returns HTTP 404 when the task does not exist."""
+    missing_task_id = "00000000-0000-4000-8000-000000000003"
+
+    response = client.get(f"{API_PREFIX}/tasks/{missing_task_id}")
+
+    assert response.status_code == 404
+
+
+def test_get_tasks_distribution_returns_count_by_quadrant(client: TestClient) -> None:
+    """GET /tasks/distribution returns the persisted count for each quadrant."""
+    descriptions = [
+        "Preparar reunião urgente com CEO hoje",
+        "Planejar roadmap do produto",
+        "Planejar roadmap do produto",
+        "Responder cliente sobre entrega",
+        "Arquivar newsletters antigas",
+    ]
+    for description in descriptions:
+        _create_task(client, description)
+
+    response = client.get(f"{API_PREFIX}/tasks/distribution")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "DO_NOW": 1,
+        "SCHEDULE": 2,
+        "DELEGATE": 1,
+        "ELIMINATE": 1,
+        "total": 5,
+    }
