@@ -10,7 +10,7 @@ os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from doneflow.database import Base, session_local
@@ -18,9 +18,9 @@ from doneflow.models.quadrant import Quadrant
 from doneflow.repositories.task_repository import TaskRepository
 
 
-def test_create_persists_and_returns_task_with_generated_id() -> None:
+def test_create_persists_and_returns_task_with_generated_id(sqlite_engine: Engine) -> None:
     """create should persist a task and return it with a generated id."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine)
     repository = TaskRepository()
 
@@ -38,9 +38,9 @@ def test_create_persists_and_returns_task_with_generated_id() -> None:
     assert created.quadrant == Quadrant.DO_NOW
 
 
-def test_get_by_id_returns_existing_task() -> None:
+def test_get_by_id_returns_existing_task(sqlite_engine: Engine) -> None:
     """get_by_id should return a previously persisted task."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine)
     repository = TaskRepository()
 
@@ -62,9 +62,9 @@ def test_get_by_id_returns_existing_task() -> None:
     assert found.description == "Agendar reunião de alinhamento semanal"
 
 
-def test_get_by_id_returns_none_for_nonexistent_id() -> None:
+def test_get_by_id_returns_none_for_nonexistent_id(sqlite_engine: Engine) -> None:
     """get_by_id should return None when task id does not exist."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine)
     repository = TaskRepository()
 
@@ -76,9 +76,9 @@ def test_get_by_id_returns_none_for_nonexistent_id() -> None:
     assert found is None
 
 
-def test_get_all_returns_complete_list() -> None:
+def test_get_all_returns_complete_list(sqlite_engine: Engine) -> None:
     """get_all should return all persisted tasks."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine)
     repository = TaskRepository()
 
@@ -102,9 +102,9 @@ def test_get_all_returns_complete_list() -> None:
     assert len(tasks) == 2
 
 
-def test_get_by_quadrant_filters_tasks_correctly() -> None:
+def test_get_by_quadrant_filters_tasks_correctly(sqlite_engine: Engine) -> None:
     """get_by_quadrant should return only tasks matching requested quadrant."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine)
     repository = TaskRepository()
 
@@ -132,9 +132,9 @@ def test_get_by_quadrant_filters_tasks_correctly() -> None:
     assert do_now_tasks[0].quadrant == Quadrant.DO_NOW
 
 
-def test_update_quadrant_updates_and_persists_change() -> None:
+def test_update_quadrant_updates_and_persists_change(sqlite_engine: Engine) -> None:
     """update_quadrant should change task quadrant and persist the change."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine)
     repository = TaskRepository()
 
@@ -162,9 +162,9 @@ def test_update_quadrant_updates_and_persists_change() -> None:
     assert persisted.quadrant == Quadrant.DELEGATE
 
 
-def test_delete_removes_task_and_returns_true() -> None:
+def test_delete_removes_task_and_returns_true(sqlite_engine: Engine) -> None:
     """delete should remove an existing task and return True."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine)
     repository = TaskRepository()
 
@@ -189,9 +189,9 @@ def test_delete_removes_task_and_returns_true() -> None:
     assert found_after_delete is None
 
 
-def test_delete_returns_false_for_nonexistent_id() -> None:
+def test_delete_returns_false_for_nonexistent_id(sqlite_engine: Engine) -> None:
     """delete should return False when task id does not exist."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine)
     repository = TaskRepository()
 
@@ -203,9 +203,9 @@ def test_delete_returns_false_for_nonexistent_id() -> None:
     assert deleted is False
 
 
-def test_get_distribution_returns_correct_count_per_quadrant() -> None:
+def test_get_distribution_returns_correct_count_per_quadrant(sqlite_engine: Engine) -> None:
     """get_distribution should return counts grouped by quadrant."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine)
     repository = TaskRepository()
 

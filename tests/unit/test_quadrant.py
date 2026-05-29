@@ -146,4 +146,3 @@ def test_quadrant_str_representation(quadrant_enum: type[Enum]) -> None:
 
     member = quadrant_enum.SCHEDULE
     assert str(member) == "SCHEDULE"
-

@@ -6,7 +6,7 @@ import os
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import Engine, inspect
 
 os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
@@ -35,9 +35,9 @@ def test_get_db_yields_a_session_instance() -> None:
         pass
 
 
-def test_tasks_table_contains_expected_columns() -> None:
+def test_tasks_table_contains_expected_columns(sqlite_engine: Engine) -> None:
     """Tasks table should map all required Task model columns."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine, tables=[TaskORM.__table__])
 
     inspector = inspect(engine)
@@ -53,9 +53,9 @@ def test_tasks_table_contains_expected_columns() -> None:
     }
 
 
-def test_taskorm_persists_and_reads_all_fields() -> None:
+def test_taskorm_persists_and_reads_all_fields(sqlite_engine: Engine) -> None:
     """TaskORM should persist values for all mapped columns."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     Base.metadata.create_all(bind=engine, tables=[TaskORM.__table__])
 
     task_id = uuid.uuid4()
