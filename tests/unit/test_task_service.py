@@ -303,3 +303,160 @@ def test_get_distribution_returns_distribution_response(
         total=10,
     )
     repository.get_distribution.assert_called_once_with(session_factory=session_factory)
+
+
+def test_get_task_by_id_returns_existing_task(
+    task_service_module: ModuleType,
+    repository: MagicMock,
+    ai_service: MagicMock,
+    cache: MagicMock,
+    session_factory: MagicMock,
+) -> None:
+    """get_task_by_id should return repository result when the task exists."""
+    task_id = UUID("55555555-5555-5555-5555-555555555555")
+    expected_task = make_task()
+    repository.get_by_id.return_value = expected_task
+    service = build_service(
+        task_service_module,
+        repository=repository,
+        ai_service=ai_service,
+        cache=cache,
+        session_factory=session_factory,
+    )
+
+    task = service.get_task_by_id(task_id)
+
+    assert task == expected_task
+    repository.get_by_id.assert_called_once_with(session_factory=session_factory, task_id=task_id)
+
+
+def test_get_tasks_by_quadrant_delegates_to_repository(
+    task_service_module: ModuleType,
+    repository: MagicMock,
+    ai_service: MagicMock,
+    cache: MagicMock,
+    session_factory: MagicMock,
+) -> None:
+    """get_tasks_by_quadrant should return repository-filtered tasks."""
+    expected_tasks = [make_task(quadrant=Quadrant.SCHEDULE)]
+    repository.get_by_quadrant.return_value = expected_tasks
+    service = build_service(
+        task_service_module,
+        repository=repository,
+        ai_service=ai_service,
+        cache=cache,
+        session_factory=session_factory,
+    )
+
+    tasks = service.get_tasks_by_quadrant(Quadrant.SCHEDULE)
+
+    assert tasks == expected_tasks
+    repository.get_by_quadrant.assert_called_once_with(
+        session_factory=session_factory,
+        quadrant=Quadrant.SCHEDULE,
+    )
+
+
+def test_update_quadrant_with_missing_task_raises_task_not_found_error(
+    task_service_module: ModuleType,
+    repository: MagicMock,
+    ai_service: MagicMock,
+    cache: MagicMock,
+    session_factory: MagicMock,
+) -> None:
+    """update_quadrant should normalize missing rows into TaskNotFoundError."""
+    task_id = UUID("66666666-6666-6666-6666-666666666666")
+    repository.update_quadrant.return_value = None
+    service = build_service(
+        task_service_module,
+        repository=repository,
+        ai_service=ai_service,
+        cache=cache,
+        session_factory=session_factory,
+    )
+
+    with pytest.raises(task_service_module.TaskNotFoundError, match=str(task_id)):
+        service.update_quadrant(task_id, Quadrant.ELIMINATE)
+
+
+def test_delete_task_returns_true_when_repository_deletes(
+    task_service_module: ModuleType,
+    repository: MagicMock,
+    ai_service: MagicMock,
+    cache: MagicMock,
+    session_factory: MagicMock,
+) -> None:
+    """delete_task should return True when repository deletion succeeds."""
+    task_id = UUID("77777777-7777-7777-7777-777777777777")
+    repository.delete.return_value = True
+    service = build_service(
+        task_service_module,
+        repository=repository,
+        ai_service=ai_service,
+        cache=cache,
+        session_factory=session_factory,
+    )
+
+    assert service.delete_task(task_id) is True
+    repository.delete.assert_called_once_with(session_factory=session_factory, task_id=task_id)
+
+
+def test_create_and_categorize_delegates_to_create_task_with_string_quadrant(
+    task_service_module: ModuleType,
+    repository: MagicMock,
+    ai_service: MagicMock,
+    cache: MagicMock,
+    session_factory: MagicMock,
+) -> None:
+    """create_and_categorize should create tasks and coerce string quadrant values."""
+    description = "Delegar entrega urgente"
+    expected_task = make_task(
+        description=description, quadrant=Quadrant.DELEGATE, ai_confidence=1.0
+    )
+    cache.get.return_value = {"quadrant": "DELEGATE", "reasoning": {"invalid": "ignored"}}
+    repository.create.return_value = expected_task
+    service = build_service(
+        task_service_module,
+        repository=repository,
+        ai_service=ai_service,
+        cache=cache,
+        session_factory=session_factory,
+    )
+
+    created = asyncio.run(service.create_and_categorize(description))
+
+    assert created == expected_task
+    repository.create.assert_called_once_with(
+        session_factory=session_factory,
+        description=description,
+        quadrant=Quadrant.DELEGATE,
+        created_at=ANY,
+        ai_confidence=1.0,
+        ai_reasoning=None,
+    )
+
+
+def test_get_all_tasks_inside_running_loop_returns_coroutine(
+    task_service_module: ModuleType,
+    repository: MagicMock,
+    ai_service: MagicMock,
+    cache: MagicMock,
+    session_factory: MagicMock,
+) -> None:
+    """Synchronous wrappers should return awaitables when an event loop is active."""
+    expected_tasks = [make_task()]
+    repository.get_all.return_value = expected_tasks
+    service = build_service(
+        task_service_module,
+        repository=repository,
+        ai_service=ai_service,
+        cache=cache,
+        session_factory=session_factory,
+    )
+
+    async def collect_tasks() -> list[Task]:
+        result = service.get_all_tasks()
+        assert asyncio.iscoroutine(result)
+        return await result
+
+    assert asyncio.run(collect_tasks()) == expected_tasks
