@@ -5,11 +5,13 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from time import perf_counter
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from doneflow import __version__
 from doneflow.api.routes.health import router as health_router
@@ -22,6 +24,9 @@ OPENAPI_DESCRIPTION = (
     "DoneFlow is an AI-powered task categorization API that organizes work with "
     "the Eisenhower Matrix quadrants: DO_NOW, SCHEDULE, DELEGATE, and ELIMINATE."
 )
+STATIC_DIR = Path(__file__).parent / "static"
+INDEX_FILE = STATIC_DIR / "index.html"
+
 CORS_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
@@ -88,6 +93,16 @@ async def log_requests(
     return response
 
 
+@app.get("/", response_class=FileResponse)
+async def read_frontend_index() -> FileResponse:
+    """Serve the DoneFlow static frontend entry document.
+
+    Returns:
+        File response containing the DoneFlow HTML shell.
+    """
+    return FileResponse(INDEX_FILE, media_type="text/html")
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Convert unhandled errors into sanitized JSON responses.
@@ -110,6 +125,8 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         content={"detail": "Internal server error"},
     )
 
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 app.include_router(tasks_router, prefix=API_PREFIX)
 app.include_router(health_router)
