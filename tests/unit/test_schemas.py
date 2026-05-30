@@ -176,3 +176,31 @@ def test_distribution_response_ignores_unknown_keys() -> None:
     assert schema.DELEGATE == 0
     assert schema.ELIMINATE == 0
     assert schema.total == 1
+
+
+def test_task_update_allows_explicit_none_description_when_quadrant_is_present() -> None:
+    """TaskUpdate should accept an explicit null description when quadrant is provided."""
+    update = TaskUpdate(description=None, quadrant=Quadrant.ELIMINATE)
+
+    assert update.description is None
+    assert update.quadrant == Quadrant.ELIMINATE
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"DO_NOW": -1, "SCHEDULE": 0, "DELEGATE": 0, "ELIMINATE": 0, "total": -1},
+        {"DO_NOW": 0, "SCHEDULE": -1, "DELEGATE": 0, "ELIMINATE": 0, "total": -1},
+    ],
+)
+def test_distribution_response_rejects_negative_quadrant_counts(payload: dict[str, int]) -> None:
+    """DistributionResponse counters should reject negative values before total validation."""
+    with pytest.raises(ValidationError):
+        DistributionResponse(**payload)
+
+
+def test_distribution_response_ignores_whitespace_wrapped_unknown_keys() -> None:
+    """Unknown keys should be ignored after normalization, including surrounding whitespace."""
+    schema = DistributionResponse.from_quadrant_counts({" DO_NOW ": 2, " unknown ": 99})
+
+    assert schema == DistributionResponse(DO_NOW=2, SCHEDULE=0, DELEGATE=0, ELIMINATE=0, total=2)
