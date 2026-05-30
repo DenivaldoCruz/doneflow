@@ -160,3 +160,55 @@ def test_cache_async_get_and_set_use_same_storage(
         return await cache.async_get("Enviar proposta urgente")
 
     assert asyncio.run(exercise_cache()) == categorized_result
+
+
+def test_cache_returns_defensive_copy_for_cached_results(
+    categorization_cache_class: type,
+    categorized_result: dict[str, Any],
+) -> None:
+    """Mutating a returned cache payload should not mutate the stored value."""
+    cache = categorization_cache_class(ttl_seconds=300, max_entries=1000)
+    task_text = "Enviar proposta urgente"
+    cache.set(task_text, categorized_result)
+
+    cached = cache.get(task_text)
+    assert cached is not None
+    cached["confidence"] = 0.01
+
+    assert cache.get(task_text) == categorized_result
+
+
+def test_cache_size_keys_and_stats_purge_expired_entries_without_explicit_get(
+    categorization_cache_class: type,
+    categorized_result: dict[str, Any],
+) -> None:
+    """Observability helpers should purge expired entries even when get is never called."""
+    current_time = 50.0
+
+    def fake_clock() -> float:
+        return current_time
+
+    cache = categorization_cache_class(ttl_seconds=10, max_entries=1000, clock=fake_clock)
+    cache.set("Revisar roadmap de produto", categorized_result)
+
+    current_time = 61.0
+
+    assert cache.size == 0
+    assert cache.keys() == []
+    assert cache.stats() == {"hits": 0, "misses": 0, "size": 0}
+
+
+def test_cache_set_updates_existing_entry_and_keeps_single_lru_slot(
+    categorization_cache_class: type,
+    categorized_result: dict[str, Any],
+) -> None:
+    """Replacing an existing key should update the payload without duplicating the entry."""
+    cache = categorization_cache_class(ttl_seconds=300, max_entries=2)
+    task_text = "Ligar para cliente hoje"
+    replacement = {"quadrant": Quadrant.SCHEDULE, "confidence": 0.64}
+
+    cache.set(task_text, categorized_result)
+    cache.set(task_text, replacement)
+
+    assert cache.size == 1
+    assert cache.get(task_text) == replacement
