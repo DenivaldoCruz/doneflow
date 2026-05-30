@@ -497,3 +497,57 @@ textarea {
     display: none;
   }
 }
+
+.new-task--loading {
+  opacity: 0.76;
+}
+
+.new-task--loading textarea {
+  cursor: wait;
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.toast-region {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 20;
+  display: grid;
+  gap: 0.75rem;
+  width: min(24rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.toast {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--schedule);
+  border-radius: 14px;
+  background: rgba(26, 35, 50, 0.96);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  line-height: 1.45;
+  pointer-events: auto;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+  animation: card-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.toast--error {
+  border-left-color: var(--do-now);
+}
+
+.toast--success {
+  border-left-color: var(--schedule);
+}
+
+.toast--leaving {
+  opacity: 0;
+  transform: translateY(0.5rem) scale(0.98);
+}

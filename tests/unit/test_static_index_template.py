@@ -64,3 +64,16 @@ def test_board_stylesheet_defines_requested_eisenhower_interactions() -> None:
     assert ".board__axis" in css
     assert "Importância" in html
     assert "Urgência" in html
+
+
+def test_board_stylesheet_defines_app_entry_feedback_states() -> None:
+    """The stylesheet supports app.js loading and toast feedback states."""
+    css = BOARD_STYLESHEET.read_text(encoding="utf-8")
+
+    assert ".new-task--loading" in css
+    assert ".button:disabled" in css
+    assert ".toast-region" in css
+    assert ".toast" in css
+    assert ".toast--error" in css
+    assert ".toast--success" in css
+    assert ".toast--leaving" in css
