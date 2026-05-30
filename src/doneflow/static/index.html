@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DoneFlow · Matriz de Eisenhower</title>
+    <link rel="stylesheet" href="/static/css/board.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="header" aria-label="Cabeçalho principal">
+        <div class="brand">
+          <span class="brand__mark" aria-hidden="true">DF</span>
+          <div>
+            <h1 class="brand__title">DoneFlow</h1>
+            <nav class="breadcrumb" aria-label="Breadcrumb">Home / Matriz de Eisenhower</nav>
+          </div>
+        </div>
+        <span class="breadcrumb">AI-powered task categorization</span>
+      </header>
+
+      <aside class="sidebar" aria-label="Controles e distribuição">
+        <section class="panel" aria-labelledby="new-task-title">
+          <h2 id="new-task-title">Nova tarefa</h2>
+          <form class="new-task" novalidate>
+            <label for="task-description">Descrição</label>
+            <textarea
+              id="task-description"
+              name="description"
+              placeholder="Descreva sua tarefa..."
+              maxlength="500"
+            ></textarea>
+            <button class="button" type="submit">Adicionar</button>
+          </form>
+        </section>
+
+        <section class="panel" aria-labelledby="distribution-title">
+          <h2 id="distribution-title">Painel de distribuição</h2>
+          <div class="distribution" aria-label="Distribuição percentual por quadrante">
+            <div class="distribution__item" style="--accent: var(--do-now)">
+              <div class="distribution__meta"><span>Fazer agora</span><strong>1 · 25%</strong></div>
+              <div class="distribution__bar"><span class="distribution__fill" style="--value: 25%"></span></div>
+            </div>
+            <div class="distribution__item" style="--accent: var(--schedule)">
+              <div class="distribution__meta"><span>Agendar</span><strong>1 · 25%</strong></div>
+              <div class="distribution__bar"><span class="distribution__fill" style="--value: 25%"></span></div>
+            </div>
+            <div class="distribution__item" style="--accent: var(--delegate)">
+              <div class="distribution__meta"><span>Delegar</span><strong>1 · 25%</strong></div>
+              <div class="distribution__bar"><span class="distribution__fill" style="--value: 25%"></span></div>
+            </div>
+            <div class="distribution__item" style="--accent: var(--eliminate)">
+              <div class="distribution__meta"><span>Eliminar</span><strong>1 · 25%</strong></div>
+              <div class="distribution__bar"><span class="distribution__fill" style="--value: 25%"></span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="about-title">
+          <h2 id="about-title">Sobre a Matriz</h2>
+          <p class="about">
+            A Matriz de Eisenhower cruza urgência e importância para decidir o que fazer
+            agora, agendar, delegar ou eliminar com menos esforço cognitivo.
+          </p>
+        </section>
+      </aside>
+
+      <main class="board" aria-label="Board 2 por 2 da Matriz de Eisenhower">
+        <span class="board__axis board__axis--importance" aria-hidden="true">Importância</span>
+        <span class="board__axis board__axis--urgency" aria-hidden="true">Urgência</span>
+        <section class="quadrant" data-quadrant="DO_NOW" aria-labelledby="do-now-title">
+          <header class="quadrant__header">
+            <div class="quadrant__label">
+              <span class="quadrant__icon" aria-hidden="true">🔥</span>
+              <div>
+                <h2 class="quadrant__title" id="do-now-title">Fazer agora</h2>
+                <p class="quadrant__subtitle">Urgente + importante</p>
+              </div>
+            </div>
+            <span class="quadrant__count" aria-label="1 tarefa">1</span>
+          </header>
+          <div class="quadrant__cards" id="cards-do-now" aria-label="Cards Fazer agora">
+            <article class="task-card">
+              <p class="task-card__text">Responder incidente crítico do cliente ainda hoje.</p>
+              <button class="task-card__remove" type="button" aria-label="Remover tarefa">×</button>
+              <span class="task-card__meta">DO_NOW · confiança 96%</span>
+            </article>
+            <article class="task-card task-card--loading" aria-label="Categorizando tarefa"></article>
+          </div>
+        </section>
+
+        <section class="quadrant" data-quadrant="SCHEDULE" aria-labelledby="schedule-title">
+          <header class="quadrant__header">
+            <div class="quadrant__label">
+              <span class="quadrant__icon" aria-hidden="true">📅</span>
+              <div>
+                <h2 class="quadrant__title" id="schedule-title">Agendar</h2>
+                <p class="quadrant__subtitle">Importante, não urgente</p>
+              </div>
+            </div>
+            <span class="quadrant__count" aria-label="1 tarefa">1</span>
+          </header>
+          <div class="quadrant__cards" id="cards-schedule" aria-label="Cards Agendar">
+            <article class="task-card">
+              <p class="task-card__text">Planejar roadmap estratégico do próximo trimestre.</p>
+              <button class="task-card__remove" type="button" aria-label="Remover tarefa">×</button>
+              <span class="task-card__meta">SCHEDULE · confiança 91%</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="quadrant" data-quadrant="DELEGATE" aria-labelledby="delegate-title">
+          <header class="quadrant__header">
+            <div class="quadrant__label">
+              <span class="quadrant__icon" aria-hidden="true">🤝</span>
+              <div>
+                <h2 class="quadrant__title" id="delegate-title">Delegar</h2>
+                <p class="quadrant__subtitle">Urgente, menos importante</p>
+              </div>
+            </div>
+            <span class="quadrant__count" aria-label="1 tarefa">1</span>
+          </header>
+          <div class="quadrant__cards" id="cards-delegate" aria-label="Cards Delegar">
+            <article class="task-card">
+              <p class="task-card__text">Confirmar agenda e materiais da reunião operacional.</p>
+              <button class="task-card__remove" type="button" aria-label="Remover tarefa">×</button>
+              <span class="task-card__meta">DELEGATE · confiança 88%</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="quadrant" data-quadrant="ELIMINATE" aria-labelledby="eliminate-title">
+          <header class="quadrant__header">
+            <div class="quadrant__label">
+              <span class="quadrant__icon" aria-hidden="true">🧹</span>
+              <div>
+                <h2 class="quadrant__title" id="eliminate-title">Eliminar</h2>
+                <p class="quadrant__subtitle">Não urgente + não importante</p>
+              </div>
+            </div>
+            <span class="quadrant__count" aria-label="1 tarefa">1</span>
+          </header>
+          <div class="quadrant__cards" id="cards-eliminate" aria-label="Cards Eliminar">
+            <article class="task-card">
+              <p class="task-card__text">Revisar notificações antigas sem impacto no projeto.</p>
+              <button class="task-card__remove" type="button" aria-label="Remover tarefa">×</button>
+              <span class="task-card__meta">ELIMINATE · confiança 84%</span>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>
