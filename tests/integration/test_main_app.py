@@ -25,7 +25,7 @@ def test_main_app_exposes_doneflow_openapi_metadata() -> None:
     schema = app.openapi()
 
     assert schema["info"]["title"] == "DoneFlow API"
-    assert schema["info"]["version"] == "0.3.0"
+    assert schema["info"]["version"] == "0.4.0"
     assert "Eisenhower" in schema["info"]["description"]
 
 
