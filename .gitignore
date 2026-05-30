@@ -6,3 +6,4 @@ __pycache__/
 tests/__pycache__/
 tests/unit/.coverage
 .DS_Store
+doneflow.db
