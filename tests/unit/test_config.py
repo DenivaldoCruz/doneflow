@@ -17,7 +17,7 @@ def test_settings_loads_defaults_when_environment_is_empty() -> None:
 
     assert settings.APP_ENV == "development"
     assert settings.LOG_LEVEL == "INFO"
-    assert settings.AI_TIMEOUT_SECONDS == 2
+    assert settings.AI_TIMEOUT_SECONDS == 5
     assert settings.AI_CACHE_TTL_SECONDS == 300
 
 

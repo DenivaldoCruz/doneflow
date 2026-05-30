@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = Field(min_length=1)
     APP_ENV: Literal["development", "staging", "production", "test"] = "development"
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
-    AI_TIMEOUT_SECONDS: float = Field(default=2.0, gt=0)
+    AI_TIMEOUT_SECONDS: float = Field(default=5.0, gt=0)
     AI_CACHE_TTL_SECONDS: int = Field(default=300, ge=0)
 
 
