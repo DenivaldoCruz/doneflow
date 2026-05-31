@@ -21,9 +21,22 @@ from doneflow.database import Base, engine
 LOGGER = logging.getLogger(__name__)
 API_PREFIX = "/api/v1"
 OPENAPI_DESCRIPTION = (
-    "DoneFlow is an AI-powered task categorization API that organizes work with "
-    "the Eisenhower Matrix quadrants: DO_NOW, SCHEDULE, DELEGATE, and ELIMINATE."
+    "DoneFlow é uma API FastAPI para organizar tarefas com IA usando a Matriz de "
+    "Eisenhower. O fluxo principal recebe uma descrição em linguagem natural, classifica "
+    "a tarefa com Claude ou fallback determinístico, persiste o resultado e expõe o "
+    "quadro por endpoints REST.\n\n"
+    "Quadrantes suportados:\n"
+    "* `DO_NOW`: urgente e importante.\n"
+    "* `SCHEDULE`: importante e não urgente.\n"
+    "* `DELEGATE`: urgente e não importante.\n"
+    "* `ELIMINATE`: não urgente e não importante.\n\n"
+    "Todos os endpoints retornam JSON e documentam respostas de validação, ausência de "
+    "recurso e erro interno quando aplicável."
 )
+OPENAPI_TAGS = [
+    {"name": "Tasks", "description": "Task board and AI categorization operations."},
+    {"name": "Health", "description": "Service uptime and dependency health checks."},
+]
 STATIC_DIR = Path(__file__).parent / "static"
 INDEX_FILE = STATIC_DIR / "index.html"
 
@@ -54,6 +67,7 @@ app = FastAPI(
     title="DoneFlow API",
     description=OPENAPI_DESCRIPTION,
     version=__version__,
+    openapi_tags=OPENAPI_TAGS,
     lifespan=lifespan,
 )
 

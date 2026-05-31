@@ -23,4 +23,5 @@ def test_docker_compose_has_app_service_and_sqlite_volume() -> None:
     assert "services:" in content
     assert "app:" in content
     assert "volumes:" in content
+    assert "ANTHROPIC_API_KEY" in content
     assert "sqlite_data:" in content

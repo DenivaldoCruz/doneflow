@@ -7,6 +7,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-sk-ant-api-key-here}"
       DATABASE_URL: "sqlite:////data/doneflow.db"
       UVICORN_WORKERS: "2"
       APP_MODULE: "src.doneflow.api.main:app"

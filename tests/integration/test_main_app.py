@@ -29,6 +29,60 @@ def test_main_app_exposes_doneflow_openapi_metadata() -> None:
     assert "Eisenhower" in schema["info"]["description"]
 
 
+def test_openapi_uses_module_tags_for_tasks_and_health() -> None:
+    """OpenAPI should group operations by product module tags."""
+    schema = app.openapi()
+
+    assert schema["tags"] == [
+        {"name": "Tasks", "description": "Task board and AI categorization operations."},
+        {"name": "Health", "description": "Service uptime and dependency health checks."},
+    ]
+    assert schema["paths"]["/api/v1/tasks"]["post"]["tags"] == ["Tasks"]
+    assert schema["paths"]["/health"]["get"]["tags"] == ["Health"]
+
+
+def test_openapi_documents_endpoint_descriptions_and_errors() -> None:
+    """All public API operations should document descriptions and error contracts."""
+    schema = app.openapi()
+    expected_errors = {
+        "post /api/v1/tasks": {"422", "500"},
+        "get /api/v1/tasks": {"500"},
+        "get /api/v1/tasks/{task_id}": {"404", "422", "500"},
+        "patch /api/v1/tasks/{task_id}": {"404", "422", "500"},
+        "delete /api/v1/tasks/{task_id}": {"404", "422", "500"},
+        "get /api/v1/tasks/distribution": {"500"},
+        "get /health": {"500"},
+    }
+
+    for operation_key, error_codes in expected_errors.items():
+        method, path = operation_key.split(" ", maxsplit=1)
+        operation = schema["paths"][path][method]
+
+        assert operation["summary"]
+        assert operation["description"]
+        assert error_codes.issubset(operation["responses"])
+
+
+def test_openapi_includes_schema_request_and_response_examples() -> None:
+    """OpenAPI schemas should include examples for every request and response schema."""
+    schema = app.openapi()
+    schemas = schema["components"]["schemas"]
+
+    for schema_name in [
+        "TaskCreate",
+        "TaskUpdate",
+        "TaskResponse",
+        "DistributionResponse",
+        "HealthResponse",
+    ]:
+        assert schemas[schema_name]["examples"]
+
+    create_request = schema["paths"]["/api/v1/tasks"]["post"]["requestBody"]
+    assert create_request["content"]["application/json"]["examples"]
+    create_response = schema["paths"]["/api/v1/tasks"]["post"]["responses"]["201"]
+    assert create_response["content"]["application/json"]["examples"]
+
+
 def test_tasks_router_is_included_under_api_v1_prefix() -> None:
     """Task routes are mounted under /api/v1 and not at the application root."""
     with TestClient(app) as client:
