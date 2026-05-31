@@ -123,7 +123,7 @@ def _not_found_error(exc: TaskNotFoundError) -> HTTPException:
                 }
             },
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: VALIDATION_ERROR_RESPONSE,
+        status.HTTP_422_UNPROCESSABLE_CONTENT: VALIDATION_ERROR_RESPONSE,
         status.HTTP_500_INTERNAL_SERVER_ERROR: INTERNAL_SERVER_ERROR_RESPONSE,
     },
 )
@@ -224,7 +224,7 @@ async def get_tasks_distribution(
             },
         },
         status.HTTP_404_NOT_FOUND: NOT_FOUND_RESPONSE,
-        status.HTTP_422_UNPROCESSABLE_ENTITY: VALIDATION_ERROR_RESPONSE,
+        status.HTTP_422_UNPROCESSABLE_CONTENT: VALIDATION_ERROR_RESPONSE,
         status.HTTP_500_INTERNAL_SERVER_ERROR: INTERNAL_SERVER_ERROR_RESPONSE,
     },
 )
@@ -260,7 +260,7 @@ async def get_task(
             },
         },
         status.HTTP_404_NOT_FOUND: NOT_FOUND_RESPONSE,
-        status.HTTP_422_UNPROCESSABLE_ENTITY: VALIDATION_ERROR_RESPONSE,
+        status.HTTP_422_UNPROCESSABLE_CONTENT: VALIDATION_ERROR_RESPONSE,
         status.HTTP_500_INTERNAL_SERVER_ERROR: INTERNAL_SERVER_ERROR_RESPONSE,
     },
 )
@@ -282,7 +282,7 @@ async def update_task_quadrant(
     """Manually reclassify an existing task into another quadrant."""
     if payload.quadrant is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="quadrant is required for manual reclassification",
         )
 
@@ -301,7 +301,7 @@ async def update_task_quadrant(
     responses={
         status.HTTP_204_NO_CONTENT: {"description": "Tarefa removida com sucesso."},
         status.HTTP_404_NOT_FOUND: NOT_FOUND_RESPONSE,
-        status.HTTP_422_UNPROCESSABLE_ENTITY: VALIDATION_ERROR_RESPONSE,
+        status.HTTP_422_UNPROCESSABLE_CONTENT: VALIDATION_ERROR_RESPONSE,
         status.HTTP_500_INTERNAL_SERVER_ERROR: INTERNAL_SERVER_ERROR_RESPONSE,
     },
 )
