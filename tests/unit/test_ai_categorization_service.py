@@ -208,7 +208,15 @@ def test_call_anthropic_api_sends_structured_prompt_and_returns_text(
     assert call_kwargs["model"] == "claude-sonnet-4-20250514"
     assert call_kwargs["timeout"] == service._timeout_seconds
     assert call_kwargs["messages"][0]["role"] == "user"
-    assert "Planejar roadmap de produto" in call_kwargs["messages"][0]["content"]
+    prompt_content = call_kwargs["messages"][0]["content"]
+    assert "Planejar roadmap de produto" in prompt_content
+    assert "SOMENTE em JSON" in prompt_content
+    assert "Exemplos few-shot" in prompt_content
+    assert prompt_content.count('"quadrant": "DO_NOW"') >= 2
+    assert prompt_content.count('"quadrant": "SCHEDULE"') >= 2
+    assert prompt_content.count('"quadrant": "DELEGATE"') >= 2
+    assert prompt_content.count('"quadrant": "ELIMINATE"') >= 2
+    assert "confidence < 0.6" in prompt_content
 
 
 def test_call_anthropic_api_rejects_empty_text(ai_service_class: type) -> None:
