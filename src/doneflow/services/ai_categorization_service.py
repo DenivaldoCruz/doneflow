@@ -100,17 +100,17 @@ class AICategorizationService:
             Normalized payload containing quadrant enum and confidence float.
 
         Raises:
-            ValueError: If payload is invalid or missing required fields.
+            ValueError: If payload is invalid or missing the required quadrant field.
         """
         payload = json.loads(response_text)
         if not isinstance(payload, dict):
             raise ValueError("Response must be an object")
 
-        if "quadrant" not in payload or "confidence" not in payload:
+        if "quadrant" not in payload:
             raise ValueError("Missing required response fields")
 
         quadrant = Quadrant.from_string(str(payload["quadrant"]))
-        confidence = float(payload["confidence"])
+        confidence = float(payload.get("confidence", 0.5))
         if not 0.0 <= confidence <= 1.0:
             raise ValueError("Confidence out of range")
 

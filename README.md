@@ -1,184 +1,194 @@
 # DoneFlow
 
-**Task Categorization with AI and Eisenhower Matrix**
+[![CI](https://img.shields.io/github/actions/workflow/status/your-org/doneflow/ci.yml?branch=main&label=CI)](https://github.com/your-org/doneflow/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/your-org/doneflow/branch/main/graph/badge.svg)](https://codecov.io/gh/your-org/doneflow)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109%2B-009688.svg)](https://fastapi.tiangolo.com/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Test Coverage](https://img.shields.io/badge/coverage-90%25%2B-brightgreen)](#testing)
+**DoneFlow** — categorização automática de tarefas com IA, FastAPI e Matriz de Eisenhower.
 
-DoneFlow is a web application that automatically categorizes user tasks using Artificial Intelligence and the Eisenhower Matrix framework. The system classifies tasks into four quadrants: **Do Now**, **Schedule**, **Delegate**, and **Eliminate**.
+## Descrição do projeto
 
-## Features
+DoneFlow é uma API web para transformar uma descrição de tarefa em uma decisão prática de prioridade. O sistema recebe tarefas em linguagem natural, usa o Anthropic Claude (com fallback determinístico) para avaliar urgência e importância, e classifica cada item em um dos quatro quadrantes da Matriz de Eisenhower:
 
-- 🤖 **AI-Powered Categorization** using Anthropic Claude API
-- 📊 **Eisenhower Matrix** visualization with four quadrants
-- ⚡ **Fast Processing** with response times < 2 seconds
-- 🎨 **Dark-Mode UI** professional and intuitive interface
-- ✅ **Test-Driven Development** with 90%+ code coverage
-- 🔌 **RESTful API** for extensible integrations
+| Quadrante | Critério | Ação recomendada | Cor |
+| --- | --- | --- | --- |
+| `DO_NOW` | Urgente + importante | Fazer agora | Vermelho `#C0392B` |
+| `SCHEDULE` | Não urgente + importante | Agendar | Azul `#2980B9` |
+| `DELEGATE` | Urgente + não importante | Delegar | Amarelo `#E6A817` |
+| `ELIMINATE` | Não urgente + não importante | Eliminar | Cinza `#555555` |
 
-## Quadrants
+A aplicação segue arquitetura em camadas:
 
-| Quadrant | Criteria | Action | Color |
-|----------|----------|--------|-------|
-| **Do Now** | Urgent + Important | Execute immediately | 🔴 Red |
-| **Schedule** | Not Urgent + Important | Plan and program | 🔵 Blue |
-| **Delegate** | Urgent + Not Important | Transfer to others | 🟡 Yellow |
-| **Eliminate** | Not Urgent + Not Important | Discard or postpone | ⚫ Gray |
+- **API:** FastAPI, OpenAPI, validação de entrada e rotas REST.
+- **Serviços:** orquestração de tarefas e categorização por IA.
+- **Repositórios:** acesso a dados com SQLAlchemy.
+- **Configuração/Banco:** variáveis de ambiente, SQLite no MVP e suporte a URLs SQLAlchemy.
 
-## Quick Start
+A documentação interativa fica disponível em `http://localhost:8000/docs` quando o servidor está em execução.
 
-### Prerequisites
+## Como rodar localmente
 
-- Python 3.12+
-- pip or poetry
-- Anthropic API key
+### Com Docker
 
-### Installation
+Pré-requisitos:
+
+- Docker
+- Docker Compose
+- Chave da Anthropic para categorização por IA (`ANTHROPIC_API_KEY`)
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/doneflow.git
+# Clone o repositório
+git clone https://github.com/your-org/doneflow.git
 cd doneflow
 
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Configure variáveis locais
+cp .env.example .env
+# Edite .env e defina ANTHROPIC_API_KEY
 
-# Install dependencies
+# Suba a API em http://localhost:8000
+docker compose up --build
+```
+
+Comandos úteis:
+
+```bash
+# Rodar em segundo plano
+docker compose up --build -d
+
+# Ver logs
+docker compose logs -f app
+
+# Parar a aplicação
+docker compose down
+
+# Parar e remover o volume SQLite local
+docker compose down -v
+```
+
+### Sem Docker
+
+Pré-requisitos:
+
+- Python 3.12+
+- `pip`
+- Chave da Anthropic para categorização por IA (`ANTHROPIC_API_KEY`)
+
+```bash
+# Clone o repositório
+git clone https://github.com/your-org/doneflow.git
+cd doneflow
+
+# Crie e ative um ambiente virtual
+python -m venv .venv
+source .venv/bin/activate
+
+# Instale a aplicação e dependências de desenvolvimento
 pip install -e ".[dev]"
 
-# Set up environment variables
+# Configure variáveis locais
 cp .env.example .env
-# Edit .env with your Anthropic API key
+# Edite .env e defina ANTHROPIC_API_KEY
+
+# Rode a API em http://localhost:8000
+uvicorn doneflow.main:app --reload
 ```
 
-### Running the Application
+> Observação: o `Dockerfile` usa `src.doneflow.api.main:app` por compatibilidade com o módulo histórico da API. Para desenvolvimento local instalado com `pip install -e`, `doneflow.main:app` é o ponto de entrada principal.
+
+## Como rodar os testes
 
 ```bash
-# Run the FastAPI server
-uvicorn src.doneflow.api.main:app --reload
-
-# Access the API documentation
-# Open http://localhost:8000/docs
-```
-
-### Running Tests
-
-```bash
-# Run all tests with coverage
+# Suite completa com cobertura mínima configurada no pyproject.toml
 pytest
 
-# Run only unit tests
+# Testes unitários
 pytest tests/unit/ -v
 
-# Run only integration tests
+# Testes de integração
 pytest tests/integration/ -v
 
-# Generate coverage report
+# Testes end-to-end
+pytest tests/e2e/ -v
+
+# Relatório HTML de cobertura em htmlcov/index.html
 pytest --cov=src/doneflow --cov-report=html
 ```
 
-## Project Structure
+Qualidade de código:
 
+```bash
+# Formatação
+black src/ tests/
+
+# Lint
+ruff check src/ tests/
+
+# Tipagem estática
+mypy src/
 ```
+
+## Estrutura de pastas
+
+```text
 doneflow/
 ├── .github/
-│   └── copilot-instructions.md
+│   └── workflows/            # Pipeline de CI
 ├── docs/
-│   └── PRD.md
+│   └── PRD.md                # Requisitos de produto
 ├── src/
 │   └── doneflow/
-│       ├── __init__.py
-│       ├── models/          # SQLAlchemy ORM models
-│       ├── services/        # Business logic
-│       ├── api/             # FastAPI endpoints
-│       └── repositories/    # Data access layer
+│       ├── api/              # Rotas FastAPI e aplicação de compatibilidade
+│       ├── models/           # Modelos SQLAlchemy e enums de domínio
+│       ├── repositories/     # Camada de acesso a dados
+│       ├── schemas/          # Schemas Pydantic de request/response
+│       ├── services/         # Regras de negócio e integração com IA
+│       ├── static/           # Frontend estático do MVP
+│       ├── config.py         # Configurações via ambiente
+│       ├── database.py       # Engine, sessão e inicialização do banco
+│       └── main.py           # Aplicação FastAPI principal
 ├── tests/
-│   ├── unit/
-│   ├── integration/
-│   └── conftest.py
+│   ├── unit/                 # Testes isolados com mocks
+│   ├── integration/          # Testes com FastAPI/TestClient e SQLite
+│   └── e2e/                  # Fluxos ponta a ponta
+├── Dockerfile
+├── docker-compose.yml
 ├── pyproject.toml
 └── README.md
 ```
 
-## API Endpoints
+## Endpoints principais
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v1/tasks` | Create task and categorize via AI |
-| `GET` | `/api/v1/tasks` | List all tasks |
-| `GET` | `/api/v1/tasks/{id}` | Get task by ID |
-| `PATCH` | `/api/v1/tasks/{id}` | Reclassify task manually |
-| `DELETE` | `/api/v1/tasks/{id}` | Remove task |
-| `GET` | `/api/v1/tasks/distribution` | Get statistics by quadrant |
-| `GET` | `/health` | Health check |
+| Método | Endpoint | Descrição |
+| --- | --- | --- |
+| `POST` | `/api/v1/tasks` | Cria uma tarefa e classifica com IA |
+| `GET` | `/api/v1/tasks` | Lista tarefas cadastradas |
+| `GET` | `/api/v1/tasks/{task_id}` | Busca uma tarefa por UUID |
+| `PATCH` | `/api/v1/tasks/{task_id}` | Atualiza manualmente descrição e/ou quadrante |
+| `DELETE` | `/api/v1/tasks/{task_id}` | Remove uma tarefa |
+| `GET` | `/api/v1/tasks/distribution` | Retorna estatísticas por quadrante |
+| `GET` | `/health` | Verifica saúde da API e do banco |
 
-## Development
+## Documentação
 
-### Methodology: Test-Driven Development (TDD)
+- [Product Requirements Document (PRD)](docs/PRD.md)
+- [OpenAPI local](http://localhost:8000/docs)
 
-All features are developed following the **Red → Green → Refactor** cycle:
+## Variáveis de ambiente
 
-1. Write test first
-2. Run test (RED - fails)
-3. Write minimal code to pass test (GREEN)
-4. Refactor code while maintaining tests (REFACTOR)
+| Variável | Exemplo | Descrição |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | `sk-ant-...` | Chave usada pelo serviço de categorização por IA |
+| `DATABASE_URL` | `sqlite:///doneflow.db` | URL SQLAlchemy do banco de dados |
+| `LOG_LEVEL` | `INFO` | Nível de logs da aplicação |
+| `AI_TIMEOUT_SECONDS` | `2` | Timeout da chamada de IA antes do fallback |
+| `AI_CACHE_TTL_SECONDS` | `300` | TTL do cache de categorizações |
 
-### Code Standards
+## Desenvolvimento
 
-- **Type Hints** in all functions
-- **Docstrings** in all public methods
-- **PEP 8** compliance
-- **90%+ test coverage** minimum
-- **95%+ unit test coverage** minimum
+O projeto segue TDD estrito: escreva o teste primeiro, implemente o mínimo para passar e refatore mantendo a suíte verde. Antes de abrir um PR, rode testes, formatação, lint e type check.
 
-### Linting and Formatting
+## Licença
 
-```bash
-# Format code with Black
-black src/ tests/
-
-# Lint with Ruff
-ruff check src/ tests/
-
-# Type checking with mypy
-mypy src/
-```
-
-## Documentation
-
-- 📖 [Product Requirements Document (PRD)](docs/PRD.md)
-- 📋 [Copilot Instructions](​.github/copilot-instructions.md)
-
-## Technology Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Backend | Python 3.12 + FastAPI |
-| AI/NLP | Anthropic Claude API |
-| Validation | Pydantic v2 |
-| Database | SQLAlchemy + SQLite (MVP) / PostgreSQL (prod) |
-| Testing | pytest + pytest-cov + httpx |
-| Frontend | HTML5 + CSS3 + Vanilla JS (MVP) |
-
-## Contributing
-
-1. Follow the TDD methodology strictly
-2. Maintain 90%+ test coverage
-3. Write clear commit messages
-4. Create meaningful pull requests
-
-## License
-
-MIT License - See LICENSE file for details
-
-## Support
-
-For issues, questions, or suggestions, please open an issue on GitHub.
-
----
-
-**DoneFlow — Matriz de Eisenhower · IA**
-*Categorização Automática de Tarefas com Python, FastAPI e TDD*
-
+MIT. Consulte o arquivo [LICENSE](LICENSE) quando disponível no repositório.

@@ -6,7 +6,52 @@ from importlib import import_module
 
 import pytest
 
-KEYWORDS_URGENCIA = ("hoje", "urgente", "deadline", "prazo", "cliente", "entrega")
+KEYWORDS_BY_QUADRANT = {
+    "DO_NOW": (
+        "hoje",
+        "urgente",
+        "deadline",
+        "agora",
+        "prazo",
+        "cliente",
+        "entrega",
+        "crítico",
+        "incidente",
+        "bloqueio",
+    ),
+    "SCHEDULE": (
+        "roadmap",
+        "produto",
+        "estratégia",
+        "proposta",
+        "reunião",
+        "ceo",
+        "planejar",
+        "trimestre",
+        "objetivo",
+        "melhoria",
+    ),
+    "DELEGATE": (
+        "responder",
+        "administrativo",
+        "rotina",
+        "solicitação",
+        "operacional",
+        "acompanhar",
+        "cobrar",
+        "confirmar",
+    ),
+    "ELIMINATE": (
+        "sem prazo",
+        "baixo impacto",
+        "opcional",
+        "talvez",
+        "arquivo",
+        "organizar",
+        "figurinhas",
+        "distração",
+    ),
+}
 QUADRANTES_COM_DESCRICAO = {
     "DO_NOW": "urgente e importante",
     "SCHEDULE": "não urgente e importante",
@@ -19,6 +64,24 @@ CRITERIOS_RF03 = (
     "impacto",
     "consequ",
 )
+FEW_SHOT_TASKS_BY_QUADRANT = {
+    "DO_NOW": (
+        "Resolver incidente crítico de produção para cliente hoje",
+        "Enviar proposta urgente ao CEO antes do deadline",
+    ),
+    "SCHEDULE": (
+        "Definir roadmap de produto do próximo trimestre",
+        "Planejar reunião estratégica de melhoria com a liderança",
+    ),
+    "DELEGATE": (
+        "Responder solicitação administrativa urgente agora",
+        "Confirmar entrega operacional com fornecedor ainda hoje",
+    ),
+    "ELIMINATE": (
+        "Organizar figurinhas antigas sem prazo",
+        "Pesquisar curiosidades opcionais de baixo impacto",
+    ),
+}
 
 
 def _load_prompt_builder_class() -> type | None:
@@ -71,10 +134,11 @@ def test_prompt_contains_task_description(generated_prompt: str) -> None:
 
 
 def test_prompt_contains_json_output_instruction(generated_prompt: str) -> None:
-    """Generated prompt should explicitly instruct JSON output."""
+    """Generated prompt should explicitly instruct JSON-only output without markdown."""
     lowered = generated_prompt.casefold()
-    assert "json" in lowered
-    assert "retorne" in lowered or "responda" in lowered
+    assert "somente em json" in lowered
+    assert "sem markdown" in lowered
+    assert "sem texto extra" in lowered
 
 
 @pytest.mark.parametrize("quadrant, description", QUADRANTES_COM_DESCRICAO.items())
@@ -98,10 +162,40 @@ def test_prompt_contains_rf03_urgency_and_importance_criteria(
     assert criterion in generated_prompt.casefold()
 
 
-@pytest.mark.parametrize("keyword", KEYWORDS_URGENCIA)
-def test_prompt_references_urgency_keywords_in_instructions(
+@pytest.mark.parametrize(
+    ("quadrant", "keyword"),
+    [
+        (quadrant, keyword)
+        for quadrant, keywords in KEYWORDS_BY_QUADRANT.items()
+        for keyword in keywords
+    ],
+)
+def test_prompt_references_expanded_pt_br_keywords_by_quadrant(
     generated_prompt: str,
+    quadrant: str,
     keyword: str,
 ) -> None:
-    """Generated prompt should reference urgency keywords used by classifier rules."""
-    assert keyword in generated_prompt.casefold()
+    """Generated prompt should reference expanded PT-BR keyword lists by quadrant."""
+    lowered = generated_prompt.casefold()
+    assert quadrant in generated_prompt
+    assert keyword in lowered
+
+
+@pytest.mark.parametrize("quadrant, example_tasks", FEW_SHOT_TASKS_BY_QUADRANT.items())
+def test_prompt_contains_two_few_shot_examples_for_each_quadrant(
+    generated_prompt: str,
+    quadrant: str,
+    example_tasks: tuple[str, str],
+) -> None:
+    """Prompt should provide two few-shot JSON examples for every quadrant."""
+    assert generated_prompt.count(f'"quadrant": "{quadrant}"') >= 2
+    for example_task in example_tasks:
+        assert example_task in generated_prompt
+
+
+def test_prompt_instructs_low_confidence_for_ambiguous_tasks(generated_prompt: str) -> None:
+    """Prompt should lower confidence below 0.6 when task context is ambiguous."""
+    lowered = generated_prompt.casefold()
+    assert "ambígu" in lowered
+    assert "confidence" in lowered
+    assert "< 0.6" in lowered or "menor que 0.6" in lowered

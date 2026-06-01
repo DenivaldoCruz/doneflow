@@ -21,9 +21,22 @@ from doneflow.database import Base, engine
 LOGGER = logging.getLogger(__name__)
 API_PREFIX = "/api/v1"
 OPENAPI_DESCRIPTION = (
-    "DoneFlow is an AI-powered task categorization API that organizes work with "
-    "the Eisenhower Matrix quadrants: DO_NOW, SCHEDULE, DELEGATE, and ELIMINATE."
+    "DoneFlow é uma API FastAPI para organizar tarefas com IA usando a Matriz de "
+    "Eisenhower. O fluxo principal recebe uma descrição em linguagem natural, classifica "
+    "a tarefa com Claude ou fallback determinístico, persiste o resultado e expõe o "
+    "quadro por endpoints REST.\n\n"
+    "Quadrantes suportados:\n"
+    "* `DO_NOW`: urgente e importante.\n"
+    "* `SCHEDULE`: importante e não urgente.\n"
+    "* `DELEGATE`: urgente e não importante.\n"
+    "* `ELIMINATE`: não urgente e não importante.\n\n"
+    "Todos os endpoints retornam JSON e documentam respostas de validação, ausência de "
+    "recurso e erro interno quando aplicável."
 )
+OPENAPI_TAGS = [
+    {"name": "Tasks", "description": "Task board and AI categorization operations."},
+    {"name": "Health", "description": "Service uptime and dependency health checks."},
+]
 STATIC_DIR = Path(__file__).parent / "static"
 INDEX_FILE = STATIC_DIR / "index.html"
 
@@ -33,6 +46,10 @@ CORS_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
 ]
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+}
 
 
 @asynccontextmanager
@@ -50,6 +67,7 @@ app = FastAPI(
     title="DoneFlow API",
     description=OPENAPI_DESCRIPTION,
     version=__version__,
+    openapi_tags=OPENAPI_TAGS,
     lifespan=lifespan,
 )
 
@@ -60,6 +78,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    """Attach privacy-oriented browser security headers to every response.
+
+    Args:
+        request: Incoming FastAPI request.
+        call_next: Next ASGI handler in the middleware chain.
+
+    Returns:
+        Response with standard content-sniffing and framing protections.
+    """
+    response = await call_next(request)
+    for header_name, header_value in SECURITY_HEADERS.items():
+        response.headers.setdefault(header_name, header_value)
+    return response
 
 
 @app.middleware("http")
@@ -114,15 +152,16 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     Returns:
         Generic HTTP 500 response that does not expose implementation details.
     """
-    LOGGER.exception(
-        "unhandled_exception method=%s path=%s",
+    LOGGER.error(
+        "unhandled_exception method=%s path=%s exception_type=%s",
         request.method,
         request.url.path,
-        exc_info=exc,
+        type(exc).__name__,
     )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal server error"},
+        headers=SECURITY_HEADERS,
     )
 
 

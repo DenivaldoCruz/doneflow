@@ -208,7 +208,15 @@ def test_call_anthropic_api_sends_structured_prompt_and_returns_text(
     assert call_kwargs["model"] == "claude-sonnet-4-20250514"
     assert call_kwargs["timeout"] == service._timeout_seconds
     assert call_kwargs["messages"][0]["role"] == "user"
-    assert "Planejar roadmap de produto" in call_kwargs["messages"][0]["content"]
+    prompt_content = call_kwargs["messages"][0]["content"]
+    assert "Planejar roadmap de produto" in prompt_content
+    assert "SOMENTE em JSON" in prompt_content
+    assert "Exemplos few-shot" in prompt_content
+    assert prompt_content.count('"quadrant": "DO_NOW"') >= 2
+    assert prompt_content.count('"quadrant": "SCHEDULE"') >= 2
+    assert prompt_content.count('"quadrant": "DELEGATE"') >= 2
+    assert prompt_content.count('"quadrant": "ELIMINATE"') >= 2
+    assert "confidence < 0.6" in prompt_content
 
 
 def test_call_anthropic_api_rejects_empty_text(ai_service_class: type) -> None:
@@ -216,6 +224,90 @@ def test_call_anthropic_api_rejects_empty_text(ai_service_class: type) -> None:
 
     class FakeContent:
         text = "   "
+
+    class FakeMessage:
+        content = [FakeContent()]
+
+    service = ai_service_class()
+    service._client = MagicMock()
+    service._client.messages.create = AsyncMock(return_value=FakeMessage())
+
+    with pytest.raises(ValueError, match="Empty model response"):
+        asyncio.run(service._call_anthropic_api("Comprar café"))
+
+
+def test_init_uses_environment_timeout_when_settings_loading_fails(
+    ai_service_class: type,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Settings failures should fall back to the AI_TIMEOUT_SECONDS environment value."""
+    module = import_module("doneflow.services.ai_categorization_service")
+
+    def raise_settings_error() -> None:
+        raise RuntimeError("settings unavailable")
+
+    monkeypatch.setattr(module, "get_settings", raise_settings_error)
+    monkeypatch.setenv("AI_TIMEOUT_SECONDS", "1.25")
+
+    service = ai_service_class()
+
+    assert service._timeout_seconds == pytest.approx(1.25)
+
+
+def test_init_keeps_default_timeout_when_settings_and_env_timeout_are_unavailable(
+    ai_service_class: type,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Settings failures without an env override should keep the deterministic default timeout."""
+    module = import_module("doneflow.services.ai_categorization_service")
+
+    def raise_settings_error() -> None:
+        raise RuntimeError("settings unavailable")
+
+    monkeypatch.setattr(module, "get_settings", raise_settings_error)
+    monkeypatch.delenv("AI_TIMEOUT_SECONDS", raising=False)
+
+    service = ai_service_class()
+
+    assert service._timeout_seconds == pytest.approx(2.0)
+
+
+@pytest.mark.asyncio
+async def test_invalid_quadrant_response_falls_back_to_keyword_classification(
+    ai_service_class: type,
+) -> None:
+    """Unknown provider quadrants should trigger deterministic fallback classification."""
+    service = ai_service_class()
+    service._call_anthropic_api = AsyncMock(return_value='{"quadrant":"PARK","confidence":0.9}')
+
+    result = await service.classify_task("Resolver entrega urgente para cliente hoje")
+
+    assert result == {"quadrant": Quadrant.DELEGATE, "confidence": 0.5}
+
+
+def test_parse_response_defaults_missing_confidence_to_half(ai_service_class: type) -> None:
+    """Provider payloads may omit confidence and should default to 0.5."""
+    service = ai_service_class()
+
+    result = service._parse_response('{"quadrant":"SCHEDULE"}')
+
+    assert result == {"quadrant": Quadrant.SCHEDULE, "confidence": 0.5}
+
+
+def test_parse_response_coerces_string_confidence(ai_service_class: type) -> None:
+    """String confidence values from JSON should be coerced into floats when valid."""
+    service = ai_service_class()
+
+    result = service._parse_response('{"quadrant":"DELEGATE","confidence":"0.72"}')
+
+    assert result == {"quadrant": Quadrant.DELEGATE, "confidence": 0.72}
+
+
+def test_call_anthropic_api_rejects_non_string_text(ai_service_class: type) -> None:
+    """Anthropic content with non-string text should be rejected as an empty response."""
+
+    class FakeContent:
+        text = None
 
     class FakeMessage:
         content = [FakeContent()]
