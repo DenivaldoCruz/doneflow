@@ -13,6 +13,7 @@ import pytest
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.testclient import TestClient
 
+from doneflow.__init__ import __version__ as version
 from doneflow.main import app
 from doneflow.models.quadrant import Quadrant
 from doneflow.services.ai_categorization_service import AICategorizationService
@@ -25,7 +26,7 @@ def test_main_app_exposes_doneflow_openapi_metadata() -> None:
     schema = app.openapi()
 
     assert schema["info"]["title"] == "DoneFlow API"
-    assert schema["info"]["version"] == "0.4.0"
+    assert schema["info"]["version"] == version
     assert "Eisenhower" in schema["info"]["description"]
 
 
